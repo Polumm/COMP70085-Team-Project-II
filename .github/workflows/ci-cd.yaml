@@ -23,5 +23,6 @@ jobs:
             cd $service
             # Example: npm install && npm test (or appropriate command for your stack)
             # Build Docker image
-            docker build -t "$service:latest" .
-            cd ../..
+            docker build -t "${service##*/}:latest" .
+            cd - || exit
+          done
