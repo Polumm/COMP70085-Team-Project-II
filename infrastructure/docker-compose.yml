@@ -1,0 +1,15 @@
+version: '3'
+services:
+  # Example microservice definitions:
+  user-service:
+    build: ../services/user-service
+    ports:
+      - "3001:3001"
+  chat-service:
+    build: ../services/chat-service
+    ports:
+      - "3002:3002"
+  gateway-service:
+    build: ../services/gateway-service
+    ports:
+      - "8080:8080"

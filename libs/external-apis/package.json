@@ -1,0 +1,8 @@
+{
+  "name": "external-apis",
+  "version": "1.0.0",
+  "description": "Shared library for external API calls",
+  "main": "src/index.js",
+  "dependencies": {},
+  "devDependencies": {}
+}
