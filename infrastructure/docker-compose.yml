@@ -13,3 +13,19 @@ services:
     build: ../services/gateway-service
     ports:
       - "8080:8080"
+  book-api-server:
+    build: ./book-api-server
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+    restart: always
+  book-client:
+    build: ./book-client
+    ports:
+      - "5001:5001"
+    environment:
+      - BOOK_API_URL=http://book-api-server:5000/books/search
+    depends_on:
+      - book-api-server
+    restart: always
