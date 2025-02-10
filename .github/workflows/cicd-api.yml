@@ -30,7 +30,7 @@ jobs:
 
       - name: Build and Push API Server
         run: |
-          cd book-api-server
+          cd services/book-api-server
           REPO_NAME=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           docker buildx build --platform linux/amd64 -t ghcr.io/$REPO_NAME/book-api-server:latest --push .
 

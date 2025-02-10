@@ -36,6 +36,6 @@ def search_books():
     return jsonify({"error": "Please provide a genre query parameter"}), 400
 
 
-# example 1
+# example1
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

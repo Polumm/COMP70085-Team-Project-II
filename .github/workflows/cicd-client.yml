@@ -30,7 +30,7 @@ jobs:
 
       - name: Build and Push Client
         run: |
-          cd book-client
+          cd services/book-client
           REPO_NAME=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           docker buildx build --platform linux/amd64 -t ghcr.io/$REPO_NAME/book-client:latest --push .
 
