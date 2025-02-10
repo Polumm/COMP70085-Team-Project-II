@@ -3,7 +3,7 @@ name: CI/CD for Book API Server
 on:
   push:
     paths:
-      - 'book-api-server/**'
+      - 'services/book-api-server/**'
     branches:
       - main
   pull_request:
