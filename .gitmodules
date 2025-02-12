@@ -1,6 +1,6 @@
 [submodule "services/chatbot-client"]
 	path = services/chatbot-client
 	url = git@github.com:Polumm/chatbot-client.git
-[submodule "services/services/chatbot-service"]
-	path = services/services/chatbot-service
+[submodule "services/chatbot-service"]
+	path = services/chatbot-service
 	url = git@github.com:Polumm/chatbot-service.git
