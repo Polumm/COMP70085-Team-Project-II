@@ -1,0 +1,3 @@
+[submodule "services/ChatBot"]
+	path = services/ChatBot
+	url = git@github.com:Polumm/ChatBot.git
