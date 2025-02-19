@@ -19,12 +19,12 @@
 
         <nav class="navbar">
             <div class="nav-links">
-                <a href="{{ url_for('home') }}" class="nav-link">Home</a>
-                <a href="{{ url_for('profile') }}" class="nav-link">Profile</a>
-                <a href="{{ url_for('friends') }}" class="nav-link">Friends</a>
-                <a href="{{ url_for('chatbot') }}" class="nav-link">Chatbot</a>
-                <a href="{{ url_for('search') }}" class="nav-link">Search</a>
-                <a href="{{ url_for('saved') }}" class="nav-link">Saved</a>
+                <a href="{{ url_for('main.home') }}" class="nav-link">Home</a>
+                <a href="{{ url_for('main.profile') }}" class="nav-link">Profile</a>
+                <a href="{{ url_for('main.friends') }}" class="nav-link">Friends</a>
+                <a href="{{ url_for('main.chatbot') }}" class="nav-link">Chatbot</a>
+                <a href="{{ url_for('search.movie_search') }}" class="nav-link">Search</a>
+                <a href="{{ url_for('main.saved') }}" class="nav-link">Saved</a>
             </div>
         </nav>
 

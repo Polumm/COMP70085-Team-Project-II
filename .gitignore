@@ -1,2 +1,4 @@
 .venv
 .venv-cb-client
+__pycache__
+instance
