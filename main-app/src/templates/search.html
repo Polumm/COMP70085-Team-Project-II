@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div>
+    <h2>Search Page</h2>
+    <form method="POST" action="{{ url_for('search') }}">
+        <!-- Basic Search Controls -->
+        <div>
+            <label for="sort_by">Sort By</label>
+            <select name="sort_by" id="sort_by">
+                <option value="popularity.desc">Most Popular</option>
+                <option value="popularity.asc">Least Popular</option>
+                <option value="vote_average.desc">Highest Rated</option>
+                <option value="vote_average.asc">Lowest Rated</option>
+                <option value="primary_release_date.desc">Newest First</option>
+                <option value="primary_release_date.asc">Oldest First</option>
+            </select>
+        </div>
+
+        <!-- Year Filters -->
+        <div>
+            <label for="year">Year</label>
+            <input type="number" name="year" id="year" min="1900" max="2025">
+            
+            <label for="primary_release_year">Primary Release Year</label>
+            <input type="number" name="primary_release_year" id="primary_release_year" min="1900" max="2025">
+        </div>
+
+        <!-- Date Range Filters -->
+        <div>
+            <label for="release_date_min">Release Date From</label>
+            <input type="date" name="release_date.gte" id="release_date_min">
+            
+            <label for="release_date_max">Release Date To</label>
+            <input type="date" name="release_date.lte" id="release_date_max">
+        </div>
+
+        <!-- Rating Filters -->
+        <div>
+            <label for="vote_average_min">Minimum Rating</label>
+            <input type="number" name="vote_average.gte" id="vote_average_min" min="0" max="10" step="0.1">
+            
+            <label for="vote_average_max">Maximum Rating</label>
+            <input type="number" name="vote_average.lte" id="vote_average_max" min="0" max="10" step="0.1">
+            
+            <label for="vote_count_min">Minimum Vote Count</label>
+            <input type="number" name="vote_count.gte" id="vote_count_min" min="0">
+        </div>
+
+        <!-- Runtime Filters -->
+        <div>
+            <label for="runtime_min">Minimum Runtime (minutes)</label>
+            <input type="number" name="with_runtime.gte" id="runtime_min" min="0">
+            
+            <label for="runtime_max">Maximum Runtime (minutes)</label>
+            <input type="number" name="with_runtime.lte" id="runtime_max" min="0">
+        </div>
+
+        <!-- Language Selection (Auto-populated) -->
+        <div>
+            <label for="with_original_language">Language</label>
+            <select name="with_original_language" id="with_original_language">
+                <option value="">Any Language</option>
+                {% for language in languages %}
+                <option value="{{ language.iso_639_1 }}">{{ language.english_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Region Selection (Auto-populated) -->
+        <div>
+            <label for="region">Region</label>
+            <select name="region" id="region">
+                <option value="">Any Region</option>
+                {% for region in regions %}
+                <option value="{{ region.iso_3166_1 }}">{{ region.english_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Genres (Auto-populated) -->
+        <div>
+            <label>Genres</label>
+            <div>
+                {% for genre in genres %}
+                <label>
+                    <input type="checkbox" name="with_genres" value="{{ genre.id }}">
+                    {{ genre.name }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div>
+            <button type="submit">Search Movies</button>
+        </div>
+    </form>
+
+    <!-- Results Section -->
+    {% if movies %}
+    <div>
+        <h3>Search Results</h3>
+        {% for movie in movies %}
+        <div>
+            {% if movie.poster_path %}
+            <img src="https://image.tmdb.org/t/p/w200{{ movie.poster_path }}" alt="{{ movie.title }}">
+            {% endif %}
+            <h4>{{ movie.title }}</h4>
+            <p>Release Date: {{ movie.release_date }}</p>
+            <p>Rating: {{ movie.vote_average }}/10 ({{ movie.vote_count }} votes)</p>
+            {% if movie.overview %}
+            <p>{{ movie.overview }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div>
+            {% if current_page > 1 %}
+            <a href="{{ url_for('search', page=current_page-1) }}">Previous</a>
+            {% endif %}
+            
+            <span>Page {{ current_page }} of {{ total_pages }}</span>
+            
+            {% if current_page < total_pages %}
+            <a href="{{ url_for('search', page=current_page+1) }}">Next</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Error Display -->
+    {% if error %}
+    <div>
+        <p>Error: {{ error }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
