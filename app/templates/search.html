@@ -72,8 +72,8 @@
             <div>
                 {% for genre in genres %}
                 <label>
-                    <input type="checkbox" name="with_genres" value="{{ genre.id }}" 
-                        {% if selected_filters.get('with_genres') and genre.id|string in selected_filters.get('with_genres', []) %}checked{% endif %}>
+                    <input type="checkbox" name="with_genres" value="{{ genre.id }}"
+                       {% if selected_filters.get('with_genres') and genre.id|string in selected_filters.get('with_genres', []) %}checked{% endif %}>
                     {{ genre.name }}
                 </label>
                 {% endfor %}

@@ -31,7 +31,7 @@ def movie_search():
     total_pages = 1
 
     # Ensure `selected_filters` is always defined
-    selected_filters = request.form.copy() if request.method == "POST" else {}
+    selected_filters = request.form.to_dict(flat=False) if request.method == "POST" else {}
 
     # Start building the API parameters
     params = {
@@ -40,6 +40,8 @@ def movie_search():
         "include_adult": False,
         "page": request.args.get("page", 1),
     }
+
+    selected_genres = [] 
 
     if request.method == "POST":
         print(f"Form Data Received: {request.form}")
@@ -71,11 +73,12 @@ def movie_search():
             params["with_original_language"] = request.form.get("with_original_language")
 
         # Handle multiple genres selection
-        genres = request.form.getlist("with_genres")
-        if genres:
-            params["with_genres"] = ",".join([str(genre) for genre in genres])  # Join selected genres by commas
+        selected_genres = request.form.getlist("with_genres")  # Store selected genres separately
+        if selected_genres:
+            params["with_genres"] = ",".join(selected_genres)  # Join selected genres by commas
         else:
             print("No genre selected!")  # Debugging
+
 
         print(f"Final Params: {params}")  # Debugging
         
@@ -104,13 +107,12 @@ def movie_search():
 
     # Always pass all required variables to the template
     return render_template(
-        "search.html",
-        movies=movies_data.get("results", []),
-        genres=genres,
-        languages=languages,
-        selected_filters=selected_filters,  # Ensure selected filters are always available
-        current_page=current_page,
-        total_pages=total_pages
-    )
-
-
+    "search.html",
+    movies=movies_data.get("results", []),
+    genres=genres,
+    selected_genres=selected_genres,  # Now always defined
+    languages=languages,
+    selected_filters=selected_filters,
+    current_page=current_page,
+    total_pages=total_pages
+)
