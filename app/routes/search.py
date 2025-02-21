@@ -14,24 +14,20 @@ def movie_search():
     )
     genres = genres_response.json().get("genres", []) if genres_response.ok else []
 
-     # Fetch available languages from TMDB
+    # Fetch available languages from TMDB
     languages_response = requests.get(
         f"{BASE_URL}/configuration/languages?api_key={TMDB_API_KEY}"
     )
-    if languages_response.ok:
-        languages = languages_response.json()
-        print(f"Languages Data: {languages}")  # DEBUGGING
-    else:
-        print("Failed to fetch languages")  # DEBUGGING
-        languages = []
-    
-    # Initialize variables for template
+    languages = languages_response.json() if languages_response.ok else []
+
+    # Initialize template variables
     movies_data = {}
     current_page = 1
     total_pages = 1
+    selected_genres = []  # Initialize to ensure it's always defined
 
-    # Ensure `selected_filters` is always defined
-    selected_filters = request.form.to_dict(flat=False) if request.method == "POST" else {}
+    # Initialize `selected_filters` properly
+    selected_filters = {}
 
     # Start building the API parameters
     params = {
@@ -41,12 +37,10 @@ def movie_search():
         "page": request.args.get("page", 1),
     }
 
-    selected_genres = [] 
-
     if request.method == "POST":
         print(f"Form Data Received: {request.form}")
 
-        # Handle general filters like year, etc.
+        # Define filter keys to persist
         filters = [
             "year", 
             "primary_release_year",
@@ -58,36 +52,33 @@ def movie_search():
             "with_runtime.gte", 
             "with_runtime.lte", 
             "with_original_language", 
+            "sort_by"
         ]
         
+        # Store filters in `params` and `selected_filters`
         for f in filters:
             value = request.form.get(f)
             if value:
-                params[f] = value  # Add the filter to params only if it's non-empty
+                params[f] = value  
+                selected_filters[f] = value  # Ensure it persists
 
-        if request.form.get("sort_by"):
-            params["sort_by"] = request.form.get("sort_by")
-
-        # Handle Language Filter
-        if request.form.get("with_original_language"):
-            params["with_original_language"] = request.form.get("with_original_language")
-
-        # Handle multiple genres selection
-        selected_genres = request.form.getlist("with_genres")  # Store selected genres separately
+        # Handle multi-select genres
+        selected_genres = request.form.getlist("with_genres")  
         if selected_genres:
-            params["with_genres"] = ",".join(selected_genres)  # Join selected genres by commas
-        else:
-            print("No genre selected!")  # Debugging
-
-
-        print(f"Final Params: {params}")  # Debugging
+            params["with_genres"] = ",".join(selected_genres)
         
-        # Try to get the response from TMDB API with the constructed parameters
+        # Save selected genres separately for form repopulation
+        selected_filters["with_genres"] = selected_genres  
+
+        # Debugging output
+        print(f"Final Params: {params}")
+
+        # Try fetching data from TMDB
         try:
             response = requests.get(f"{BASE_URL}/discover/movie", params=params)
-            print(f"API Request URL: {response.url}")  # Debugging the full request URL
+            print(f"API Request URL: {response.url}")
 
-            response.raise_for_status()  # Check for errors in the response
+            response.raise_for_status()
             movies_data = response.json()
             current_page = movies_data.get("page", 1)
             total_pages = movies_data.get("total_pages", 1)
@@ -96,23 +87,19 @@ def movie_search():
                 "search.html",
                 error=f"Error fetching movies: {str(e)}",
                 genres=genres,
+                languages=languages,
+                selected_filters=selected_filters,
                 current_page=current_page,
                 total_pages=total_pages,
                 movies=[]
             )
-        
-    # Return only results if AJAX request
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return render_template("results.html", movies=movies_data.get("results", []), current_page=current_page, total_pages=total_pages)
 
-    # Always pass all required variables to the template
     return render_template(
-    "search.html",
-    movies=movies_data.get("results", []),
-    genres=genres,
-    selected_genres=selected_genres,  # Now always defined
-    languages=languages,
-    selected_filters=selected_filters,
-    current_page=current_page,
-    total_pages=total_pages
-)
+        "search.html",
+        movies=movies_data.get("results", []),
+        genres=genres,
+        languages=languages,
+        selected_filters=selected_filters,
+        current_page=current_page,
+        total_pages=total_pages
+    )
