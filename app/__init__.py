@@ -29,11 +29,13 @@ def create_app():
     from app.routes.main import main
     from app.routes.search import search
     from app.routes.auth import auth
+    from app.routes.quotes import quote_bp
 
 
     app.register_blueprint(main, url_prefix="/")
     app.register_blueprint(search, url_prefix="/search")
     app.register_blueprint(auth, url_prefix="/auth")
+    app.register_blueprint(quote_bp, url_prefix="/")
 
     # Ensure tables are created
     with app.app_context():

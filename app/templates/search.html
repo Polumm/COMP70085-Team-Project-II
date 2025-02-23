@@ -96,16 +96,23 @@
         <div>
             <h3>Search Results</h3>
             {% for movie in movies %}
-            <div>
-                {% if movie.poster_path %}
-                <img src="https://image.tmdb.org/t/p/w200{{ movie.poster_path }}" alt="{{ movie.title }}">
-                {% endif %}
-                <h4>{{ movie.title }}</h4>
-                <p>Release Date: {{ movie.release_date }}</p>
-                <p>Rating: {{ movie.vote_average }}/10 ({{ movie.vote_count }} votes)</p>
-                {% if movie.overview %}
-                <p>{{ movie.overview }}</p>
-                {% endif %}
+            <div class="movie-result">
+                <!-- Poster on the left -->
+                <div class="movie-poster">
+                    {% if movie.poster_path %}
+                    <img src="https://image.tmdb.org/t/p/w200{{ movie.poster_path }}" alt="{{ movie.title }}">
+                    {% endif %}
+                </div>
+
+                <!-- Movie details on the right -->
+                <div class="movie-info">
+                    <h4 class="movie-title">{{ movie.title }}</h4>
+                    <p><strong>Release Date:</strong> {{ movie.release_date }}</p>
+                    <p><strong>Rating:</strong> ⭐ {{ movie.vote_average }}/10 ({{ movie.vote_count }} votes)</p>
+                    {% if movie.overview %}
+                    <p class="movie-description">{{ movie.overview }}</p>
+                    {% endif %}
+                </div>
             </div>
             {% endfor %}
 

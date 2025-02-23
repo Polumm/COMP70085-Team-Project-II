@@ -46,23 +46,31 @@
     <!-- Fetch & Display Movie Quote -->
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-        fetch("/get-quote")  // Fetch from flask
-            .then(response => response.json())
+        fetch("/get-quote")  // Fetch from Flask backend
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                console.log("API Response:", data);  // Debugging
+                console.log("📡 API Response:", data);  // Debugging: Log API response
 
-                if (data.quote && data.movie) {
+                if (data.quote && data.movie_title) {
                     document.getElementById("movie-quote").innerText = `"${data.quote}"`;
-                    document.getElementById("movie-source").innerText = `— ${data.movie}`;
+                    document.getElementById("movie-source").innerText = `— ${data.movie_title}`;
                 } else {
-                    document.getElementById("movie-quote").innerText = "🎬 No quote available.";
+                    document.getElementById("movie-quote").innerText = "🎬 No movie quote available.";
+                    document.getElementById("movie-source").innerText = "";
                 }
             })
             .catch(error => {
-                console.error("Error fetching movie quote:", error);
+                console.error("🚨 Error fetching movie quote:", error);
                 document.getElementById("movie-quote").innerText = "⚠️ Failed to load quote.";
+                document.getElementById("movie-source").innerText = "";
             });
     });
     </script>
+
 </body>
 </html>
