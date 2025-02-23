@@ -10,14 +10,14 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
+
         if user and user.check_password(form.password.data):
             login_user(user)
-            flash("Logged in successfully!", "success")
-             # Redirect to profile or previous page
             next_page = request.args.get("next")
-            return redirect(next_page) if next_page else redirect(url_for("main.profile"))
+            return redirect(next_page) if next_page else redirect(url_for("main.home"))
 
-        flash("Invalid credentials", "danger")
+        flash("Invalid login. Please try again.", "danger")  # Generic error message
+
     return render_template("login.html", form=form)
 
 @auth.route("/signup", methods=["GET", "POST"])
@@ -39,5 +39,4 @@ def signup():
 @login_required
 def logout():
     logout_user()
-    flash("Logged out successfully!", "info")
     return redirect(url_for("auth.login"))

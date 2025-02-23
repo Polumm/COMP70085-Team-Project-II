@@ -3,16 +3,29 @@
 {% block content %}
 <div class="form-container">
     <h2 class="form-title">Login</h2>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     <form method="POST">
         {{ form.hidden_tag() }}
+
         <div class="form-group">
             {{ form.email.label(class="form-label") }}
             {{ form.email(class="form-input") }}
         </div>
+
         <div class="form-group">
             {{ form.password.label(class="form-label") }}
             {{ form.password(class="form-input") }}
         </div>
+
         <div class="form-group">
             {{ form.submit(class="form-button") }}
         </div>
