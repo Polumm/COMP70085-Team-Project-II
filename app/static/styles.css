@@ -1,73 +1,116 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
-}
-
-.content-wrapper {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.header {
-    margin-bottom: 20px;
-}
-
-.app-title {
-    color: #333;
-    font-size: 24px;
-}
-
-/* Top bar for login/logout/signup */
-.top-bar {
-    background-color: #222;  /* Darker background */
+    font-family: "Cormorant Garamond", serif;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+                url("../static/movie_poster.webp") no-repeat center center fixed;
+    background-size: cover;
     color: white;
-    padding: 10px 15px;
+}
+
+/* Top navbar (for login/signup/logout) */
+.top-navbar {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px;
     text-align: right;
+    font-size: 16px;
 }
 
-.top-bar-content {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    align-items: center;
-}
-
-.top-link {
+.top-nav-link {
     color: white;
     text-decoration: none;
-    font-size: 14px;
-    font-weight: bold;
+    margin-left: 20px;
 }
 
-.top-link:hover {
+.top-nav-link:hover {
     text-decoration: underline;
 }
 
+/* Main navbar */
 .navbar {
-    background-color: #333;
-    padding: 10px 0;
-    margin-bottom: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 15px 0;
+    text-align: center;
 }
 
 .nav-links {
     display: flex;
-    justify-content: space-around;
+    justify-content: center;
 }
 
 .nav-link {
     color: white;
     text-decoration: none;
-    padding: 5px 10px;
+    font-size: 18px;
+    margin: 0 15px;
+    padding: 10px 15px;
 }
 
 .nav-link:hover {
-    background-color: #555;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
 }
 
-.page-container {
-    padding: 20px;
-    background-color: #f5f5f5;
+/* MovieMe Title */
+.app-title {
+    text-align: center;
+    font-size: 50px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: #671509; /* Cinematic purple */
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.8);
+}
+
+/* Home Page Styling */
+.home-container {
+    text-align: center;
+    padding-top: 100px;
+}
+
+.home-title {
+    font-size: 48px;
+    color: #671509; /* Purple */
+    text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.8);
+}
+
+/* Home Buttons */
+.home-buttons {
+    margin-top: 20px;
+}
+
+.button {
+    display: inline-block;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 12px 25px;
+    margin: 10px;
     border-radius: 5px;
+    text-decoration: none;
+    transition: 0.3s ease;
+}
+
+.login-btn {
+    background: #5010b5;
+    color: white;
+}
+
+.login-btn:hover {
+    background: #034337;
+}
+
+.signup-btn {
+    background: #5010b5;
+    color: white;
+}
+
+.signup-btn:hover {
+    background: #5010b5;
+}
+
+/* Welcome Message */
+.welcome-message {
+    font-size: 30px;
+    margin-top: 20px;
+    color: #034337;
 }

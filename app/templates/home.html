@@ -1,7 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-container text-center">
-    <h2 class="text-3xl font-bold text-purple-400">Welcome, {{ current_user.username }}!</h2>
+<div class="home-container text-center">
+    {% if current_user.is_authenticated %}
+        <h1 class="home-title">Welcome, {{ current_user.username }}!</h1>
+    {% else %}
+        <h1 class="home-title">Welcome to MovieMe!</h1>
+        <div class="home-buttons">
+            <a href="{{ url_for('auth.login') }}" class="button login-btn">Login</a>
+            <a href="{{ url_for('auth.signup') }}" class="button signup-btn">Sign Up</a>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
