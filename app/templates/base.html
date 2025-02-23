@@ -43,5 +43,26 @@
             {% endblock %}
         </main>
     </div>
+    <!-- Fetch & Display Movie Quote -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch("/get-quote")  // Fetch from flask
+            .then(response => response.json())
+            .then(data => {
+                console.log("API Response:", data);  // Debugging
+
+                if (data.quote && data.movie) {
+                    document.getElementById("movie-quote").innerText = `"${data.quote}"`;
+                    document.getElementById("movie-source").innerText = `— ${data.movie}`;
+                } else {
+                    document.getElementById("movie-quote").innerText = "🎬 No quote available.";
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching movie quote:", error);
+                document.getElementById("movie-quote").innerText = "⚠️ Failed to load quote.";
+            });
+    });
+    </script>
 </body>
 </html>
