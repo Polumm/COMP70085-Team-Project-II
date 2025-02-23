@@ -7,8 +7,7 @@ main = Blueprint("main", __name__)
 
 @main.route("/")
 def landing_page():
-    # return "Hello, this is a test"
-    return render_template("home.html")
+    return render_template("home.html", user=current_user)
 
 
 @main.route("/home")
