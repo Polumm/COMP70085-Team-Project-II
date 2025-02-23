@@ -1,11 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Login</h2>
-<form method="POST">
-    {{ form.hidden_tag() }}
-    <p>{{ form.email.label }} {{ form.email }}</p>
-    <p>{{ form.password.label }} {{ form.password }}</p>
-    <p>{{ form.submit }}</p>
-</form>
+<div class="form-container">
+    <h2 class="form-title">Login</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-input") }}
+        </div>
+        <div class="form-group">
+            {{ form.password.label(class="form-label") }}
+            {{ form.password(class="form-input") }}
+        </div>
+        <div class="form-group">
+            {{ form.submit(class="form-button") }}
+        </div>
+    </form>
+</div>
 {% endblock %}

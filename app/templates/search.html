@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div>
-    <h2>Search Page</h2>
+<div class="search-container">
+    <h2 class="search-title">Find Your Favorite Movies</h2>
     <form id="searchForm" method="POST" action="{{ url_for('search.movie_search') }}">
+
         <!-- Sort By -->
-        <div>
-            <label for="sort_by">Sort By</label>
-            <select name="sort_by" id="sort_by">
+        <div class="search-group">
+            <label for="sort_by" class="search-label">Sort By</label>
+            <select name="sort_by" id="sort_by" class="search-select">
                 <option value="popularity.desc" {% if selected_filters.get('sort_by', 'popularity.desc') == 'popularity.desc' %}selected{% endif %}>Most Popular</option>
                 <option value="popularity.asc" {% if selected_filters.get('sort_by') == 'popularity.asc' %}selected{% endif %}>Least Popular</option>
                 <option value="vote_average.desc" {% if selected_filters.get('sort_by') == 'vote_average.desc' %}selected{% endif %}>Highest Rated</option>
@@ -18,62 +19,65 @@
         </div>
 
         <!-- Year Filters -->
-        <div>
-            <label for="year">Year</label>
-            <input type="number" name="year" id="year" min="1900" max="2025" value="{{ selected_filters.get('year', '') }}">
+        <div class="search-group">
+            <label for="year" class="search-label">Year</label>
+            <input type="number" name="year" id="year" class="search-input" min="1900" max="2025" value="{{ selected_filters.get('year', '') }}">
         </div>
 
         <!-- Date Range Filters -->
-        <div>
-            <label for="release_date_min">Release Date From</label>
-            <input type="date" name="release_date.gte" id="release_date_min" value="{{ selected_filters.get('release_date.gte', '') }}">
-            
-            <label for="release_date_max">Release Date To</label>
-            <input type="date" name="release_date.lte" id="release_date_max" value="{{ selected_filters.get('release_date.lte', '') }}">
+        <div class="search-group">
+            <label class="search-label">Release Date</label>
+            <div class="search-flex">
+                <input type="date" name="release_date.gte" id="release_date_min" class="search-input"
+                       value="{{ selected_filters.get('release_date.gte', '') }}" placeholder="From">
+                <input type="date" name="release_date.lte" id="release_date_max" class="search-input"
+                       value="{{ selected_filters.get('release_date.lte', '') }}" placeholder="To">
+            </div>
         </div>
 
         <!-- Rating Filters -->
-        <div>
-            <label for="vote_average_min">Minimum Rating</label>
-            <input type="number" name="vote_average.gte" id="vote_average_min" min="0" max="10" step="0.1" value="{{ selected_filters.get('vote_average.gte', '') }}">
-            
-            <label for="vote_average_max">Maximum Rating</label>
-            <input type="number" name="vote_average.lte" id="vote_average_max" min="0" max="10" step="0.1" value="{{ selected_filters.get('vote_average.lte', '') }}">
-            
-            <label for="vote_count_min">Minimum Vote Count</label>
-            <input type="number" name="vote_count.gte" id="vote_count_min" min="0" value="{{ selected_filters.get('vote_count.gte', '') }}">
+        <div class="search-group">
+            <label class="search-label">Rating Range</label>
+            <div class="search-flex">
+                <input type="number" name="vote_average.gte" class="search-input" placeholder="Min (0-10)"
+                       min="0" max="10" step="0.1" value="{{ selected_filters.get('vote_average.gte', '') }}">
+                <input type="number" name="vote_average.lte" class="search-input" placeholder="Max (0-10)"
+                       min="0" max="10" step="0.1" value="{{ selected_filters.get('vote_average.lte', '') }}">
+            </div>
         </div>
 
         <!-- Runtime Filters -->
-        <div>
-            <label for="runtime_min">Minimum Runtime (minutes)</label>
-            <input type="number" name="with_runtime.gte" id="runtime_min" min="0" value="{{ selected_filters.get('with_runtime.gte', '') }}">
-            
-            <label for="runtime_max">Maximum Runtime (minutes)</label>
-            <input type="number" name="with_runtime.lte" id="runtime_max" min="0" value="{{ selected_filters.get('with_runtime.lte', '') }}">
+        <div class="search-group">
+            <label class="search-label">Runtime (Minutes)</label>
+            <div class="search-flex">
+                <input type="number" name="with_runtime.gte" class="search-input" placeholder="Min"
+                       min="0" value="{{ selected_filters.get('with_runtime.gte', '') }}">
+                <input type="number" name="with_runtime.lte" class="search-input" placeholder="Max"
+                       min="0" value="{{ selected_filters.get('with_runtime.lte', '') }}">
+            </div>
         </div>
 
-        <!-- Language Selection (Auto-populated) -->
-        <div>
-            <label for="with_original_language">Language</label>
-            <select name="with_original_language" id="with_original_language">
+        <!-- Language Selection -->
+        <div class="search-group">
+            <label for="with_original_language" class="search-label">Language</label>
+            <select name="with_original_language" id="with_original_language" class="search-select">
                 <option value="">Any Language</option>
                 {% for language in languages %}
                 <option value="{{ language['iso_639_1'] }}" {% if selected_filters.get('with_original_language') == language['iso_639_1'] %}selected{% endif %}>
                     {{ language['english_name'] }}
                 </option>
                 {% endfor %}
-            </select>            
+            </select>
         </div>
 
-        <!-- Genres (Auto-populated) -->
-        <div>
-            <label>Genres</label>
-            <div>
+        <!-- Genres -->
+        <div class="search-group">
+            <label class="search-label">Genres</label>
+            <div class="genres-container">
                 {% for genre in genres %}
-                <label>
-                    <input type="checkbox" name="with_genres" value="{{ genre.id }}"
-                       {% if selected_filters.get('with_genres') and genre.id|string in selected_filters.get('with_genres', []) %}checked{% endif %}>
+                <label class="genre-label">
+                    <input type="checkbox" name="with_genres" class="genre-checkbox" value="{{ genre.id }}"
+                           {% if selected_filters.get('with_genres') and genre.id|string in selected_filters.get('with_genres', []) %}checked{% endif %}>
                     {{ genre.name }}
                 </label>
                 {% endfor %}
@@ -81,8 +85,8 @@
         </div>
 
         <!-- Submit Button -->
-        <div>
-            <button type="submit">Search Movies</button>
+        <div class="search-group">
+            <button type="submit" class="search-btn">Search Movies</button>
         </div>
     </form>
 
@@ -107,15 +111,15 @@
 
             <!-- Pagination -->
             {% if total_pages > 1 %}
-            <div>
+            <div class="pagination">
                 {% if current_page > 1 %}
-                <a href="{{ url_for('search.movie_search', page=current_page-1) }}">Previous</a>
+                <a href="{{ url_for('search.movie_search', page=current_page-1) }}" class="pagination-link">Previous</a>
                 {% endif %}
-                
-                <span>Page {{ current_page }} of {{ total_pages }}</span>
-                
+
+                <span class="pagination-text">Page {{ current_page }} of {{ total_pages }}</span>
+
                 {% if current_page < total_pages %}
-                <a href="{{ url_for('search.movie_search', page=current_page+1) }}">Next</a>
+                <a href="{{ url_for('search.movie_search', page=current_page+1) }}" class="pagination-link">Next</a>
                 {% endif %}
             </div>
             {% endif %}
@@ -124,19 +128,11 @@
 
         <!-- Error Display -->
         {% if error %}
-        <div>
+        <div class="error-message">
             <p>Error: {{ error }}</p>
         </div>
         {% endif %}
     </div>
-
-
-    <!-- Error Display -->
-    {% if error %}
-    <div>
-        <p>Error: {{ error }}</p>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}
 
@@ -149,12 +145,12 @@ document.getElementById("sort_by").addEventListener("change", function() {
         method: "POST",
         body: formData,
         headers: {
-            "X-Requested-With": "XMLHttpRequest"  // Indicate AJAX request
+            "X-Requested-With": "XMLHttpRequest"
         }
     })
     .then(response => response.text())
     .then(html => {
-        document.getElementById("resultsContainer").innerHTML = html;  // Update results
+        document.getElementById("resultsContainer").innerHTML = html;
     });
 });
 </script>
