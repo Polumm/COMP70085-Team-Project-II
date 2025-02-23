@@ -1,9 +1,6 @@
 # Database models
-from app import db
-from flask_bcrypt import Bcrypt
+from app import db, bcrypt
 from flask_login import UserMixin
-
-bcrypt = Bcrypt()
 
 class User(db.Model, UserMixin):  # UserMixin adds Flask-Login support
     id = db.Column(db.Integer, primary_key=True)

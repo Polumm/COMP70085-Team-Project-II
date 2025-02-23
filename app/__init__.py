@@ -2,10 +2,12 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_bcrypt import Bcrypt
 from app.config import Config
 
 # Initialize extensions
 db = SQLAlchemy()
+bcrypt = Bcrypt()
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"  # Redirects unauthorized users to login page
 
@@ -16,6 +18,7 @@ def create_app():
 
     # Initialize extensions
     db.init_app(app)
+    bcrypt.init_app(app)
     login_manager.init_app(app)
 
     # Import models after db is initialized
