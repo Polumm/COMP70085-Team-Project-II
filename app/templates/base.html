@@ -7,6 +7,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+    <header class="top-bar">
+        <div class="top-bar-content">
+            {% if current_user.is_authenticated %}
+                <span class="welcome-text">Hi, {{ current_user.username }}!</span>
+                <a href="{{ url_for('auth.logout') }}" class="top-link logout-button">Logout</a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="top-link login-button">Login</a>
+                <a href="{{ url_for('auth.signup') }}" class="top-link signup-button">Sign Up</a>
+            {% endif %}
+        </div>
+    </header>
     <div class="content-wrapper">
         <header class="header">
             <div class="header-content">
