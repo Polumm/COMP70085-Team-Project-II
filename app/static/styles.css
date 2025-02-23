@@ -51,15 +51,19 @@ body {
     border-radius: 5px;
 }
 
-/* MovieMe Title */
-.app-title {
-    text-align: center;
-    font-size: 50px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    color: #671509; /* Cinematic purple */
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.8);
+/* Logo Styling */
+.logo-container {
+    display: flex; /* Align logo in the center */
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.logo-image {
+    max-width: 100%;
+    height: auto;
+    max-height: 120px;
+    filter: drop-shadow(4px 4px 10px rgba(255, 255, 255, 0.5)); /* White glow for contrast */
 }
 
 /* Home Page Styling */
