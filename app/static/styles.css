@@ -338,25 +338,25 @@ body {
 
 /* Search results */
 .movie-result {
-    display: flex; /* 📌 Align poster & details side by side */
-    align-items: flex-start; /* 📌 Keep items aligned at the top */
-    gap: 20px; /* 📌 Add spacing between the poster & details */
-    max-width: 700px; /* 📌 Keep it compact */
+    display: flex; /* Align poster & details side by side */
+    align-items: flex-start; /* Keep items aligned at the top */
+    gap: 20px; /* Add spacing between the poster & details */
+    max-width: 700px; /* Keep it compact */
     margin: 20px auto;
     padding: 15px;
-    background-color: rgba(0, 0, 0, 0.8); /* 📌 Dark background for contrast */
+    background-color: rgba(0, 0, 0, 0.8); /* Dark background for contrast */
     border-radius: 8px;
 }
 
 .movie-poster img {
     width: 120px; /* 🎬 Adjust poster size */
-    border-radius: 5px; /* 📌 Slightly rounded corners */
-    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2); /* 📌 Subtle shadow */
+    border-radius: 5px; /* Slightly rounded corners */
+    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2); /* Subtle shadow */
 }
 
 .movie-info {
     flex: 1; /* 📝 Let the text take up remaining space */
-    color: white; /* 📌 Keep text readable */
+    color: white;
 }
 
 .movie-title {
@@ -366,5 +366,5 @@ body {
 
 .movie-description {
     font-size: 14px;
-    opacity: 0.9; /* 📌 Slight transparency for readability */
+    opacity: 0.9; /* Slight transparency for readability */
 }
