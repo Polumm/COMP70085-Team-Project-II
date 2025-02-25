@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Chat with Bot</title>
+</head>
+<body>
+    <h1>Chat with Bot</h1>
+
+    <div>
+        <a href="{{ url_for('client.logout') }}">Logout</a>
+    </div>
+
+    <hr/>
+
+    <div id="chatWindow">
+        {% for msg in messages %}
+            <p>
+                <strong>{{ msg.sender }}:</strong> {{ msg.text }}
+                <small>({{ msg.time }})</small>
+            </p>
+        {% endfor %}
+    </div>
+
+    <hr/>
+
+    <form action="{{ url_for('client.send_to_bot') }}" method="POST">
+        <input type="text" name="message" placeholder="Type your message..." />
+        <button type="submit">Send</button>
+    </form>
+
+</body>
+</html>
