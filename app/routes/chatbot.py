@@ -17,7 +17,7 @@ from flask import (
 from werkzeug.security import check_password_hash
 from app.routes.auth import decode_jwt, login_required  # Import from auth.py
 
-chatbot_bp = Blueprint("client", __name__)
+chatbot_bp = Blueprint("chatbot_bp", __name__)
 
 # URLs for the other microservices from environment variables
 DB_SERVICE_URL = os.getenv("DB_SERVICE_URL")  # Database microservice
@@ -33,7 +33,7 @@ def home():
     Redirect to the multi-session chat if the user is logged in; otherwise, to the login page.
     """
     if session.get("token"):
-        return redirect(url_for("client.multisession_chat"))
+        return redirect(url_for("chatbot_bp.multisession_chat"))
     return redirect(url_for("auth.login"))
 
 
@@ -52,11 +52,11 @@ def register():
 
         if not username or not password or not confirm_password:
             flash("All fields are required.", "error")
-            return redirect(url_for("client.register"))
+            return redirect(url_for("chatbot_bp.register"))
 
         if password != confirm_password:
             flash("Passwords do not match.", "error")
-            return redirect(url_for("client.register"))
+            return redirect(url_for("chatbot_bp.register"))
 
         try:
             resp = requests.post(
@@ -68,7 +68,7 @@ def register():
                 flash(
                     "Registration successful! You can now log in.", "success"
                 )
-                return redirect(url_for("client.login"))
+                return redirect(url_for("chatbot_bp.login"))
             else:
                 err_data = resp.json()
                 flash(err_data.get("error", "Registration failed."), "error")
@@ -92,7 +92,7 @@ def login():
         password = request.form.get("password", "").strip()
         if not username or not password:
             flash("Username and password required.")
-            return redirect(url_for("client.login"))
+            return redirect(url_for("chatbot_bp.login"))
 
         try:
             resp = requests.get(
@@ -105,7 +105,7 @@ def login():
                     token = generate_jwt(username)
                     session["token"] = token
                     flash("Login successful!")
-                    return redirect(url_for("client.multisession_chat"))
+                    return redirect(url_for("chatbot_bp.multisession_chat"))
                 else:
                     flash("Invalid credentials.")
             else:
@@ -146,7 +146,7 @@ def logout():
     # Then remove the JWT from the session to log out
     session.pop("token", None)
     flash("Logged out.")
-    return redirect(url_for("client.login"))
+    return redirect(url_for("chatbot_bp.login"))
 
 
 # ----------------------------------------------------
@@ -164,7 +164,9 @@ def sync_session(session_id):
     except requests.exceptions.RequestException:
         flash("Failed to sync session; DB service unavailable.", "error")
 
-    return redirect(url_for("client.multisession_chat", session_id=session_id))
+    return redirect(
+        url_for("chatbot_bp.multisession_chat", session_id=session_id)
+    )
 
 
 @chatbot_bp.route("/botchat", methods=["GET"])
@@ -239,7 +241,7 @@ def new_session():
 
     if not session_name:
         flash("Session name cannot be empty.", "error")
-        return redirect(url_for("client.multisession_chat"))
+        return redirect(url_for("chatbot_bp.multisession_chat"))
 
     # Validate session name (only letters, numbers, spaces, dashes, and underscores)
     if not re.match(r"^[a-zA-Z0-9 _-]+$", session_name):
@@ -247,7 +249,7 @@ def new_session():
             "Session name contains invalid characters. Use only letters, numbers, spaces, dashes, and underscores.",
             "error",
         )
-        return redirect(url_for("client.multisession_chat"))
+        return redirect(url_for("chatbot_bp.multisession_chat"))
 
     # Check if session name already exists for this user (case-insensitive)
     try:
@@ -265,14 +267,14 @@ def new_session():
                     "A session with this name already exists. Please choose a different name.",
                     "error",
                 )
-                return redirect(url_for("client.multisession_chat"))
+                return redirect(url_for("chatbot_bp.multisession_chat"))
 
     except requests.exceptions.RequestException:
         flash(
             "Database service is unavailable. Cannot check for duplicate session names.",
             "warning",
         )
-        return redirect(url_for("client.multisession_chat"))
+        return redirect(url_for("chatbot_bp.multisession_chat"))
 
     # If valid and unique, proceed with creating a new session
     try:
@@ -286,7 +288,7 @@ def new_session():
         else:
             err_data = resp.json()
             flash(err_data.get("error", "Failed to create session."), "error")
-            return redirect(url_for("client.multisession_chat"))
+            return redirect(url_for("chatbot_bp.multisession_chat"))
 
     except requests.exceptions.RequestException:
         flash(
@@ -295,7 +297,7 @@ def new_session():
         )
 
     return redirect(
-        url_for("client.multisession_chat", session_id=session_name)
+        url_for("chatbot_bp.multisession_chat", session_id=session_name)
     )
 
 
@@ -305,7 +307,9 @@ def select_session(session_id):
     """
     Switch to a different chat session.
     """
-    return redirect(url_for("client.multisession_chat", session_id=session_id))
+    return redirect(
+        url_for("chatbot_bp.multisession_chat", session_id=session_id)
+    )
 
 
 @chatbot_bp.route("/botchat/send", methods=["POST"])
@@ -321,12 +325,12 @@ def send_to_session():
 
     if not session_id:
         flash("No session specified.", "error")
-        return redirect(url_for("client.multisession_chat"))
+        return redirect(url_for("chatbot_bp.multisession_chat"))
 
     if not user_message:
         flash("Message cannot be empty.", "error")
         return redirect(
-            url_for("client.multisession_chat", session_id=session_id)
+            url_for("chatbot_bp.multisession_chat", session_id=session_id)
         )
 
     # Generate timestamp
@@ -353,12 +357,12 @@ def send_to_session():
                 err_data.get("error", "Failed to store your message."), "error"
             )
             return redirect(
-                url_for("client.multisession_chat", session_id=session_id)
+                url_for("chatbot_bp.multisession_chat", session_id=session_id)
             )
     except requests.exceptions.RequestException:
         flash("Error contacting DB service for user message.", "error")
         return redirect(
-            url_for("client.multisession_chat", session_id=session_id)
+            url_for("chatbot_bp.multisession_chat", session_id=session_id)
         )
 
     # 2) Call Chatbot microservice for a reply
@@ -402,7 +406,9 @@ def send_to_session():
         flash("Error contacting DB service to store bot response.", "error")
 
     # Redirect back to the chat page
-    return redirect(url_for("client.multisession_chat", session_id=session_id))
+    return redirect(
+        url_for("chatbot_bp.multisession_chat", session_id=session_id)
+    )
 
 
 @chatbot_bp.route("/botchat/delete/<session_id>", methods=["GET"])
@@ -431,7 +437,7 @@ def delete_session(session_id):
         flash("Error contacting DB service.", "error")
 
     # 3) Redirect back to the main chat page
-    return redirect(url_for("client.multisession_chat"))
+    return redirect(url_for("chatbot_bp.multisession_chat"))
 
 
 @chatbot_bp.route("/botchat/search", methods=["GET"])
@@ -444,7 +450,7 @@ def search_messages():
     query = request.args.get("query", "").strip()
     if not query:
         flash("No query provided.", "error")
-        return redirect(url_for("client.multisession_chat"))
+        return redirect(url_for("chatbot_bp.multisession_chat"))
 
     username = g.username
     try:

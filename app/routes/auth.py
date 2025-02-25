@@ -54,7 +54,7 @@ def login_required(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        token = session.get("token", None)
+        token = session.get("token")
         if not token:
             flash("Please log in first.")
             # Preserve the next page the user was trying to access
@@ -66,6 +66,7 @@ def login_required(func):
             session.pop("token", None)
             return redirect(url_for("auth.login", next=request.url))
 
+        # Store username in flask.g for downstream routes
         g.username = payload["username"]
         return func(*args, **kwargs)
 
@@ -79,7 +80,8 @@ def login_required(func):
 def login():
     """
     Display the login form and authenticate the user.
-    Redirect to the originally requested page after login.
+    Redirect to the originally requested page after login
+    or go to the multi-session chat if none specified.
     """
     form = LoginForm()
     next_page = request.args.get("next")  # Capture 'next' parameter
@@ -102,8 +104,11 @@ def login():
                     session["token"] = token
                     flash("Login successful!", "success")
 
-                    # Redirect to the original destination or home
-                    return redirect(next_page or url_for("main.home"))
+                    # Redirect to the originally requested page,
+                    # or go to the multi-session chat by default
+                    return redirect(
+                        next_page or url_for("chatbot_bp.multisession_chat")
+                    )
                 else:
                     flash("Invalid credentials.", "danger")
             else:
