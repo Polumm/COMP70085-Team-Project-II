@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  chatbot-database:
+    ports:
+      - "6666:6666"
+    environment:
+      - FLASK_ENV=deployment
+      - CHATBOT_URL=${CHATBOT_URL}
+    restart: always
