@@ -6,5 +6,6 @@ services:
       - "5000:5000"
     environment:
       - FLASK_ENV=deployment
-      - CHATBOT_URL=${CHATBOT_URL}
+      - CHATBOT_URL: ${{ secrets.CHATBOT_URL }}
+      - DB_SERVICE_URL: ${{ secrets.DB_SERVICE_URL }}
     restart: always

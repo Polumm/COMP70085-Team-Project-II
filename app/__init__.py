@@ -18,10 +18,9 @@ login_manager.login_view = (
 def create_app():
     app = Flask(__name__, template_folder="templates")
     app.config.from_object(Config)
-    app.config["SECRET_KEY"] = Config.SECRET_KEY  # Fixed this line
-    app.config["DB_SERVICE_URL"] = os.getenv(
-        "DB_SERVICE_URL"
-    )  # Fixed this line
+    app.config["SECRET_KEY"] = Config.SECRET_KEY
+    app.config["CHATBOT_URL"] = Config.CHATBOT_URL
+    app.config["DB_SERVICE_URL"] = Config.DB_SERVICE_URL
 
     # Initialize extensions
     db.init_app(app)
