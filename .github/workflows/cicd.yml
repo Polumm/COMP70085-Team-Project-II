@@ -63,7 +63,7 @@ jobs:
             docker pull ghcr.io/$REPO_NAME/movie-me:latest
 
             echo "🔹 Running new container..."
-            docker run -d --name movie-me -p 6666:6666 \
+            docker run -d --name movie-me -p 8080:8080 \
               -e FLASK_ENV=deployment \
               -e CHATBOT_URL="${{secrets.CHATBOT_URL}}" \
               ghcr.io/$REPO_NAME/movie-me:latest
