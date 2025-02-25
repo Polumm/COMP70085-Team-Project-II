@@ -32,17 +32,14 @@ def friends():
 
 
 @main.route("/chatbot")
+@login_required
 def chatbot():
     chatbot_url = current_app.config.get("CHATBOT_URL")
     token = session.get("token", None)
 
-    if not token:
-        flash("Please log in to access the chatbot.")
-        return redirect(url_for("auth.login"))
-
     # Append the token as a query parameter
     iframe_url = f"{chatbot_url}?token={token}"
-    return render_template("chatbot.html", chatbot_url=iframe_url)
+    return render_template("bot_multisession.html", chatbot_url=iframe_url)
 
 
 @main.route("/saved")

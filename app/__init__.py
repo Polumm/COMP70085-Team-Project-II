@@ -9,12 +9,15 @@ from app.config import Config
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 login_manager = LoginManager()
-login_manager.login_view = "auth.login"  # Redirects unauthorized users to login page
+login_manager.login_view = (
+    "auth.login"  # Redirects unauthorized users to login page
+)
 
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
     app.config.from_object(Config)
+    app.config["SECRET_KEY"] = Config.SECRET_KEY  # Fixed this line
 
     # Initialize extensions
     db.init_app(app)
@@ -33,12 +36,13 @@ def create_app():
     from app.routes.search import search
     from app.routes.auth import auth
     from app.routes.quotes import quote_bp
-
+    from app.routes.chatbot import client_bp
 
     app.register_blueprint(main, url_prefix="/")
     app.register_blueprint(search, url_prefix="/search")
     app.register_blueprint(auth, url_prefix="/auth")
     app.register_blueprint(quote_bp, url_prefix="/")
+    app.register_blueprint(client_bp, url_prefix="/")
 
     # Ensure tables are created
     with app.app_context():

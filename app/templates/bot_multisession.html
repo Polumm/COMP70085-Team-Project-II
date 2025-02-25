@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Multi-Session Chat</title>
+    <style>
+      .session-list {
+        float: left;
+        width: 20%;
+        border-right: 1px solid #ccc;
+        min-height: 400px;
+      }
+      .chat-area {
+        float: left;
+        width: 70%;
+        margin-left: 10px;
+      }
+      .clearfix::after {
+        content: "";
+        clear: both;
+        display: block;
+      }
+    </style>
+</head>
+<body>
+<h1>Chat with Bot (Multiple Sessions)</h1>
+<div>
+    <a href="{{ url_for('client.logout') }}">Logout</a>
+</div>
+<form action="{{ url_for('client.search_messages') }}" method="GET">
+  <input type="text" name="query" placeholder="Search your chat..." />
+  <button type="submit">Search</button>
+</form>
+<hr/>
+<div class="clearfix">
+  <!-- Left panel: List of sessions + form to create a new one -->
+  <div class="session-list">
+    <h3>Your Sessions</h3>
+    <ul>
+      {% if session_ids %}
+        {% for sid in session_ids %}
+          <li>
+            <a href="{{ url_for('client.select_session', session_id=sid) }}"
+               style="{% if sid == active_session_id %}font-weight: bold;{% endif %}">
+              {{ sid }}
+            </a>
+          </li>
+        {% endfor %}
+      {% else %}
+        <li>No sessions yet.</li>
+      {% endif %}
+    </ul>
+    <form action="{{ url_for('client.new_session') }}" method="POST">
+      <input type="text" name="session_name" placeholder="New session name"/>
+      <button type="submit">Create</button>
+    </form>
+  </div>
+
+  <!-- Right panel: Active session's messages + form to send message -->
+  <div class="chat-area">
+    {% if active_session_id %}
+      <h3>Session: {{ active_session_id }}</h3>
+      <p><a href="{{ url_for('client.delete_session', session_id=active_session_id) }}">Delete this session</a></p>
+      <hr/>
+      <div id="chatWindow">
+        {% for msg in messages %}
+          <p class="chat-message" data-time="{{ msg.time }}">
+            <strong>{{ msg.sender }}:</strong> {{ msg.text }}
+            {% if msg.time %}
+              <small>({{ msg.time }})</small>
+            {% endif %}
+          </p>
+        {% endfor %}
+      </div>      
+      <hr/>
+      <form action="{{ url_for('client.send_to_session') }}" method="POST">
+        <input type="hidden" name="session_id" value="{{ active_session_id }}">
+        <input type="text" name="message" placeholder="Type your message..."/>
+        <button type="submit">Send</button>
+      </form>
+    {% else %}
+      <h3>Please create or select a session.</h3>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Display flashed messages (errors, confirmations) -->
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul style="color:red;">
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+</body>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const messageTime = urlParams.get("message_time");
+  
+      if (messageTime) {
+          const messages = document.querySelectorAll(".chat-message");
+  
+          messages.forEach(msg => {
+              if (msg.dataset.time === messageTime) {
+                  msg.scrollIntoView({ behavior: "smooth", block: "center" });
+                  msg.style.backgroundColor = "#ffff99";  // Highlight effect
+              }
+          });
+      }
+  });
+  </script>
+  
+</html>

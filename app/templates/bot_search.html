@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Search Results</title>
+</head>
+<body>
+<h1>Search Results for "{{ query }}"</h1>
+
+<div>
+    <a href="{{ url_for('client.multisession_chat') }}">Back to Chat Sessions</a>
+</div>
+<hr/>
+
+{% if results %}
+    <p>Found {{ results|length }} matches:</p>
+    <ul>
+        {% for row in results %}
+            <li>
+                <strong>Session:</strong> 
+                <a href="{{ url_for('client.multisession_chat', session_id=row.session_id, message_time=row.time) }}">
+                    {{ row.session_id }}
+                </a> 
+                |
+                <strong>Sender:</strong> {{ row.sender }} |
+                <strong>Text:</strong> {{ row.text }} |
+                <small>{{ row.time }}</small>
+            </li>
+        {% endfor %}    
+    </ul>
+{% else %}
+    <p>No matches found.</p>
+{% endif %}
+
+<!-- Display flashed messages (error or success) -->
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul style="color:red;">
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+</body>
+</html>
