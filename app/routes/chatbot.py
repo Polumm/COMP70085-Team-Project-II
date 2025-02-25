@@ -17,7 +17,7 @@ from flask import (
 from werkzeug.security import check_password_hash
 from app.routes.auth import decode_jwt, login_required  # Import from auth.py
 
-client_bp = Blueprint("client", __name__)
+chatbot_bp = Blueprint("client", __name__)
 
 # URLs for the other microservices from environment variables
 DB_SERVICE_URL = os.getenv("DB_SERVICE_URL")  # Database microservice
@@ -27,7 +27,7 @@ CHATBOT_URL = os.getenv("CHATBOT_URL")  # Chatbot microservice
 # ----------------------------------------------------
 # HOME / LANDING
 # ----------------------------------------------------
-@client_bp.route("/")
+@chatbot_bp.route("/")
 def home():
     """
     Redirect to the multi-session chat if the user is logged in; otherwise, to the login page.
@@ -40,7 +40,7 @@ def home():
 # ----------------------------------------------------
 # REGISTRATION
 # ----------------------------------------------------
-@client_bp.route("/register", methods=["GET", "POST"])
+@chatbot_bp.route("/register", methods=["GET", "POST"])
 def register():
     """
     Show a registration form (GET), or register a new user by calling the DB microservice (POST).
@@ -81,7 +81,7 @@ def register():
 # ----------------------------------------------------
 # LOGIN
 # ----------------------------------------------------
-@client_bp.route("/login", methods=["GET", "POST"])
+@chatbot_bp.route("/login", methods=["GET", "POST"])
 def login():
     """
     Show the login form (GET), or authenticate user (POST) by calling DB microservice.
@@ -119,7 +119,7 @@ def login():
 # ----------------------------------------------------
 # LOGOUT
 # ----------------------------------------------------
-@client_bp.route("/logout")
+@chatbot_bp.route("/logout")
 def logout():
     # If we have a token in session, decode it to find the username
     token = session.get("token")
@@ -152,7 +152,7 @@ def logout():
 # ----------------------------------------------------
 # CHAT MANAGEMENT
 # ----------------------------------------------------
-@client_bp.route("/botchat/sync_session/<session_id>", methods=["POST"])
+@chatbot_bp.route("/botchat/sync_session/<session_id>", methods=["POST"])
 @login_required
 def sync_session(session_id):
     username = g.username
@@ -167,7 +167,7 @@ def sync_session(session_id):
     return redirect(url_for("client.multisession_chat", session_id=session_id))
 
 
-@client_bp.route("/botchat", methods=["GET"])
+@chatbot_bp.route("/botchat", methods=["GET"])
 @login_required
 def multisession_chat():
     """
@@ -228,7 +228,7 @@ def multisession_chat():
 import re  # Import regex module
 
 
-@client_bp.route("/botchat/new_session", methods=["POST"])
+@chatbot_bp.route("/botchat/new_session", methods=["POST"])
 @login_required
 def new_session():
     """
@@ -299,7 +299,7 @@ def new_session():
     )
 
 
-@client_bp.route("/botchat/select/<session_id>")
+@chatbot_bp.route("/botchat/select/<session_id>")
 @login_required
 def select_session(session_id):
     """
@@ -308,7 +308,7 @@ def select_session(session_id):
     return redirect(url_for("client.multisession_chat", session_id=session_id))
 
 
-@client_bp.route("/botchat/send", methods=["POST"])
+@chatbot_bp.route("/botchat/send", methods=["POST"])
 @login_required
 def send_to_session():
     """
@@ -405,7 +405,7 @@ def send_to_session():
     return redirect(url_for("client.multisession_chat", session_id=session_id))
 
 
-@client_bp.route("/botchat/delete/<session_id>", methods=["GET"])
+@chatbot_bp.route("/botchat/delete/<session_id>", methods=["GET"])
 @login_required
 def delete_session(session_id):
     """
@@ -434,7 +434,7 @@ def delete_session(session_id):
     return redirect(url_for("client.multisession_chat"))
 
 
-@client_bp.route("/botchat/search", methods=["GET"])
+@chatbot_bp.route("/botchat/search", methods=["GET"])
 @login_required
 def search_messages():
     """

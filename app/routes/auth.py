@@ -13,52 +13,58 @@ from app.forms import LoginForm, SignupForm
 from functools import wraps
 import requests
 import jwt
-import os
-from flask import current_app
 from datetime import datetime, timedelta, timezone
 from werkzeug.security import check_password_hash
 
 # Blueprint Configuration
 auth = Blueprint("auth", __name__)
 
-# Environment Variables
-DB_SERVICE_URL = os.getenv("DB_SERVICE_URL")
-
 
 # ----------------------------------------------------
 # JWT Helpers
 # ----------------------------------------------------
-
-
 def generate_jwt(username, expires_in=3600):
+    """
+    Generate a JWT that expires in 'expires_in' seconds.
+    """
     payload = {
         "username": username,
         "exp": datetime.now(timezone.utc) + timedelta(seconds=expires_in),
     }
-    secret_key = current_app.config["SECRET_KEY"]  # Access from Flask config
+    secret_key = current_app.config["SECRET_KEY"]  # Get from Flask config
     return jwt.encode(payload, secret_key, algorithm="HS256")
 
 
 def decode_jwt(token):
+    """
+    Decode a JWT, returning its payload or None if invalid/expired.
+    """
     try:
-        return jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
+        secret_key = current_app.config["SECRET_KEY"]
+        return jwt.decode(token, secret_key, algorithms=["HS256"])
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
 
 
 def login_required(func):
+    """
+    Custom decorator to ensure a user is logged in.
+    If not, redirect to the login page with 'next' parameter.
+    """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         token = session.get("token", None)
         if not token:
             flash("Please log in first.")
-            return redirect(url_for("auth.login"))
+            # Preserve the next page the user was trying to access
+            return redirect(url_for("auth.login", next=request.url))
 
         payload = decode_jwt(token)
         if not payload:
             flash("Session expired. Please log in again.")
             session.pop("token", None)
-            return redirect(url_for("auth.login"))
+            return redirect(url_for("auth.login", next=request.url))
 
         g.username = payload["username"]
         return func(*args, **kwargs)
@@ -71,7 +77,12 @@ def login_required(func):
 # ----------------------------------------------------
 @auth.route("/login", methods=["GET", "POST"])
 def login():
+    """
+    Display the login form and authenticate the user.
+    Redirect to the originally requested page after login.
+    """
     form = LoginForm()
+    next_page = request.args.get("next")  # Capture 'next' parameter
 
     if form.validate_on_submit():
         username = form.username.data
@@ -80,7 +91,8 @@ def login():
         # Call DB microservice to authenticate user
         try:
             resp = requests.get(
-                f"{DB_SERVICE_URL}/users/{username}", timeout=5
+                f"{current_app.config['DB_SERVICE_URL']}/users/{username}",
+                timeout=5,
             )
             if resp.status_code == 200:
                 user_data = resp.json()
@@ -89,7 +101,9 @@ def login():
                     token = generate_jwt(username)
                     session["token"] = token
                     flash("Login successful!", "success")
-                    return redirect(url_for("main.home"))
+
+                    # Redirect to the original destination or home
+                    return redirect(next_page or url_for("main.home"))
                 else:
                     flash("Invalid credentials.", "danger")
             else:
@@ -105,6 +119,9 @@ def login():
 # ----------------------------------------------------
 @auth.route("/signup", methods=["GET", "POST"])
 def signup():
+    """
+    Display the signup form and register a new user.
+    """
     form = SignupForm()
 
     if form.validate_on_submit():
@@ -120,7 +137,7 @@ def signup():
         # Call DB microservice to create user
         try:
             resp = requests.post(
-                f"{DB_SERVICE_URL}/users",
+                f"{current_app.config['DB_SERVICE_URL']}/users",
                 json={
                     "username": username,
                     "email": email,
@@ -146,6 +163,9 @@ def signup():
 @auth.route("/logout")
 @login_required
 def logout():
+    """
+    Logout the user by clearing the JWT token from session.
+    """
     session.pop("token", None)
     flash("Logged out successfully.", "success")
     return redirect(url_for("auth.login"))

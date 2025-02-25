@@ -25,9 +25,9 @@
 <body>
 <h1>Chat with Bot (Multiple Sessions)</h1>
 <div>
-    <a href="{{ url_for('client.logout') }}">Logout</a>
+    <a href="{{ url_for('chatbot_bp.logout') }}">Logout</a>
 </div>
-<form action="{{ url_for('client.search_messages') }}" method="GET">
+<form action="{{ url_for('chatbot_bp.search_messages') }}" method="GET">
   <input type="text" name="query" placeholder="Search your chat..." />
   <button type="submit">Search</button>
 </form>
@@ -40,7 +40,7 @@
       {% if session_ids %}
         {% for sid in session_ids %}
           <li>
-            <a href="{{ url_for('client.select_session', session_id=sid) }}"
+            <a href="{{ url_for('chatbot_bp.select_session', session_id=sid) }}"
                style="{% if sid == active_session_id %}font-weight: bold;{% endif %}">
               {{ sid }}
             </a>
@@ -50,7 +50,7 @@
         <li>No sessions yet.</li>
       {% endif %}
     </ul>
-    <form action="{{ url_for('client.new_session') }}" method="POST">
+    <form action="{{ url_for('chatbot_bp.new_session') }}" method="POST">
       <input type="text" name="session_name" placeholder="New session name"/>
       <button type="submit">Create</button>
     </form>
@@ -60,7 +60,7 @@
   <div class="chat-area">
     {% if active_session_id %}
       <h3>Session: {{ active_session_id }}</h3>
-      <p><a href="{{ url_for('client.delete_session', session_id=active_session_id) }}">Delete this session</a></p>
+      <p><a href="{{ url_for('chatbot_bp.delete_session', session_id=active_session_id) }}">Delete this session</a></p>
       <hr/>
       <div id="chatWindow">
         {% for msg in messages %}
@@ -73,7 +73,7 @@
         {% endfor %}
       </div>      
       <hr/>
-      <form action="{{ url_for('client.send_to_session') }}" method="POST">
+      <form action="{{ url_for('chatbot_bp.send_to_session') }}" method="POST">
         <input type="hidden" name="session_id" value="{{ active_session_id }}">
         <input type="text" name="message" placeholder="Type your message..."/>
         <button type="submit">Send</button>

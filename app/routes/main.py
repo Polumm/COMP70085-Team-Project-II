@@ -1,12 +1,6 @@
 # Main routes
-from flask import Blueprint, render_template, current_app
+from flask import Blueprint, render_template
 from flask_login import login_required, current_user
-from flask import (
-    session,
-    flash,
-    redirect,
-    url_for,
-)
 
 main = Blueprint("main", __name__)
 
@@ -34,12 +28,7 @@ def friends():
 @main.route("/chatbot")
 @login_required
 def chatbot():
-    chatbot_url = current_app.config.get("CHATBOT_URL")
-    token = session.get("token", None)
-
-    # Append the token as a query parameter
-    iframe_url = f"{chatbot_url}?token={token}"
-    return render_template("bot_multisession.html", chatbot_url=iframe_url)
+    return render_template("bot_multisession.html")
 
 
 @main.route("/saved")
