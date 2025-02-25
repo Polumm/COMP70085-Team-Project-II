@@ -11,3 +11,4 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     TMDB_API_KEY = os.getenv("TMDB_API_KEY", "your-api-key")
     CHATBOT_URL = os.getenv("CHATBOT_URL")
+    DB_SERVICE_URL = os.getenv("DB_SERVICE_URL")

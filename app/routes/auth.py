@@ -106,9 +106,7 @@ def login():
 
                     # Redirect to the originally requested page,
                     # or go to the multi-session chat by default
-                    return redirect(
-                        next_page or url_for("chatbot_bp.multisession_chat")
-                    )
+                    return redirect(next_page or url_for("main.home"))
                 else:
                     flash("Invalid credentials.", "danger")
             else:
