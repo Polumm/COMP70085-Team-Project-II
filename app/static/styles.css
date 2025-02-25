@@ -1,47 +1,370 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
+    font-family: "Cormorant Garamond", serif;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+                url("../static/movie_poster.webp") no-repeat center center fixed;
+    background-size: cover;
+    color: white;
 }
 
-.content-wrapper {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+/* Top navbar (for login/signup/logout) */
+.top-navbar {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px;
+    text-align: right;
+    font-size: 16px;
 }
 
-.header {
-    margin-bottom: 20px;
+.top-nav-link {
+    color: white;
+    text-decoration: none;
+    margin-left: 20px;
 }
 
-.app-title {
-    color: #333;
-    font-size: 24px;
+.top-nav-link:hover {
+    text-decoration: underline;
 }
 
+/* Main navbar */
 .navbar {
-    background-color: #333;
-    padding: 10px 0;
-    margin-bottom: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 15px 0;
+    text-align: center;
 }
 
 .nav-links {
     display: flex;
-    justify-content: space-around;
+    justify-content: center;
 }
 
 .nav-link {
     color: white;
     text-decoration: none;
-    padding: 5px 10px;
+    font-size: 18px;
+    margin: 0 15px;
+    padding: 10px 15px;
 }
 
 .nav-link:hover {
-    background-color: #555;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
 }
 
-.page-container {
+/* Logo Styling */
+.logo-container {
+    display: flex; /* Align logo in the center */
+    justify-content: center;
+    align-items: center;
     padding: 20px;
-    background-color: #f5f5f5;
+}
+
+.logo-image {
+    max-width: 100%;
+    height: auto;
+    max-height: 120px;
+    filter: drop-shadow(4px 4px 10px rgba(255, 255, 255, 0.5)); /* White glow for contrast */
+}
+
+/* Home Page Styling */
+.home-container {
+    text-align: center;
+    padding-top: 100px;
+}
+
+.home-title {
+    font-size: 48px;
+    color: #671509; /* Purple */
+    text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.8);
+}
+
+/* Home Buttons */
+.home-buttons {
+    margin-top: 20px;
+}
+
+.button {
+    display: inline-block;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 12px 25px;
+    margin: 10px;
     border-radius: 5px;
+    text-decoration: none;
+    transition: 0.3s ease;
+}
+
+.login-btn {
+    background: #5010b5;
+    color: white;
+}
+
+.login-btn:hover {
+    background: #836daf;
+}
+
+.signup-btn {
+    background: #5010b5;
+    color: white;
+}
+
+.signup-btn:hover {
+    background: #836daf;
+}
+
+
+/* Welcome Message */
+.welcome-message {
+    font-size: 30px;
+    margin-top: 20px;
+    color: #034337;
+}
+
+/* --- LOGIN & SIGNUP FORM STYLES --- */
+
+.form-container {
+    background: rgba(0, 0, 0, 0.85);
+    padding: 40px;
+    width: 400px;
+    margin: 100px auto;
+    border-radius: 10px;
+    box-shadow: 0px 4px 15px rgba(255, 255, 255, 0.2);
+    text-align: center;
+}
+
+/* Form Title */
+.form-title {
+    font-family: "Cormorant Garamond", serif;
+    text-align: center;
+    font-size: 32px;
+    color: #ffffff;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+}
+
+/* Form Input Fields */
+.form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.form-label {
+    display: block;
+    font-size: 18px;
+    color: white;
+    margin-bottom: 5px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #5010b5;
+    border-radius: 5px;
+    color: white;
+}
+
+.form-input:focus {
+    border-color: #a400ff;
+    outline: none;
+}
+
+/* Form Button */
+.form-button {
+    width: 100%;
+    padding: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 5px;
+    background: #5010b5;
+    color: white;
+    transition: 0.3s ease;
+    cursor: pointer;
+}
+
+.form-button:hover {
+    background: #a400ff;
+    transform: scale(1.05);
+}
+
+/* Flash Messages (for errors) */
+.flash-messages {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.flash-messages p {
+    background: rgb(103, 21, 9);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+
+/* SEARCH PAGE STYLING */
+
+/* Container for the entire search section */
+.search-container {
+    width: 70%;  /* Adjust width to balance content */
+    margin: 50px auto;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.85);  /* Slightly transparent black */
+    border-radius: 10px;
+    box-shadow: 0px 4px 15px rgba(255, 255, 255, 0.2);
+}
+
+/* Title styling */
+.search-title {
+    font-size: 36px;
+    text-align: center;
+    color: white;
+    text-transform: uppercase;
+    margin-bottom: 25px;
+    text-shadow: 2px 2px 10px rgba(255, 255, 255, 0.3);
+}
+
+/* FORM INPUTS */
+
+/* Each search filter section */
+.search-group {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;  /* Align elements to the left */
+    width: 100%;
+    max-width: 500px; /* Controls the width of the filters */
+}
+
+/* Labels for inputs */
+.search-label {
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 5px;
+}
+
+/* Input fields & dropdowns */
+.search-input,
+.search-select {
+    width: 100%; /* Make inputs full width */
+    padding: 10px;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #034337;
+    border-radius: 5px;
+    color: white;
+}
+
+/* Hover & Focus Effects */
+.search-input:focus,
+.search-select:focus {
+    border-color: #0a5349;
+    outline: none;
+}
+
+/* Genre checkboxes arranged in a grid */
+.genres-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);  /* 3 columns */
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Style each checkbox label */
+.genre-label {
+    font-size: 16px;
+    color: white;
+    display: flex;
+    align-items: center;
+}
+
+/* Custom checkbox appearance */
+.genre-checkbox {
+    transform: scale(1.3);
+    margin-right: 8px;
+    accent-color: #0a5349; /* Green highlight */
+}
+
+/* SEARCH BUTTON */
+
+.search-btn {
+    margin-top: 20px;
+    background: #034337;
+    color: white;
+    padding: 12px 30px;
+    font-size: 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    transition: 0.3s ease;
+    cursor: pointer;
+}
+
+.search-btn:hover {
+    background: #156e64;
+    transform: scale(1.1);
+}
+
+/* Movie Quote Styling */
+.quote-container {
+    text-align: center;
+    margin-top: 30px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 10px;
+    box-shadow: 0px 4px 15px rgba(255, 255, 255, 0.2);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.quote-text {
+    font-size: 22px;
+    font-weight: bold;
+    color: white;
+    font-style: italic;
+}
+
+.quote-source {
+    font-size: 18px;
+    color: #156e64;
+    margin-top: 5px;
+}
+
+/* Search results */
+.movie-result {
+    display: flex; /* Align poster & details side by side */
+    align-items: flex-start; /* Keep items aligned at the top */
+    gap: 20px; /* Add spacing between the poster & details */
+    max-width: 700px; /* Keep it compact */
+    margin: 20px auto;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.8); /* Dark background for contrast */
+    border-radius: 8px;
+}
+
+.movie-poster img {
+    width: 120px; /* 🎬 Adjust poster size */
+    border-radius: 5px; /* Slightly rounded corners */
+    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2); /* Subtle shadow */
+}
+
+.movie-info {
+    flex: 1; /* 📝 Let the text take up remaining space */
+    color: white;
+}
+
+.movie-title {
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+.movie-description {
+    font-size: 14px;
+    opacity: 0.9; /* Slight transparency for readability */
 }
