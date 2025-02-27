@@ -1,8 +1,7 @@
 import requests
-import jwt
 import os
-from datetime import datetime, timedelta, timezone
-from functools import wraps
+import re  # Import regex module
+from datetime import datetime, timedelta
 from flask import (
     Blueprint,
     render_template,
@@ -12,10 +11,13 @@ from flask import (
     flash,
     session,
     g,
-    current_app,
 )
 from werkzeug.security import check_password_hash
-from app.routes.auth import decode_jwt, login_required  # Import from auth.py
+from app.routes.auth import (
+    decode_jwt,
+    login_required,
+    generate_jwt,
+)  # Import from auth.py
 
 chatbot_bp = Blueprint("chatbot_bp", __name__)
 
@@ -172,13 +174,9 @@ def sync_session(session_id):
 @chatbot_bp.route("/botchat", methods=["GET"])
 @login_required
 def multisession_chat():
-    """
-    Display all chat sessions for the logged-in user by calling the DB microservice.
-    Then retrieve messages for the currently selected session.
-    """
     username = g.username
 
-    # 1) Retrieve sessions (Scoped to the current user)
+    # Retrieve sessions for the current user
     session_ids = []
     try:
         resp = requests.get(
@@ -195,12 +193,12 @@ def multisession_chat():
             "warning",
         )
 
-    # 2) Determine the active session
+    # Automatically select the first session if none is active
     session_id = request.args.get(
         "session_id", session_ids[0] if session_ids else None
     )
 
-    # 3) Retrieve messages if session exists
+    # Retrieve messages for the active session
     messages = []
     if session_id:
         try:
@@ -225,9 +223,6 @@ def multisession_chat():
         active_session_id=session_id,
         messages=messages,
     )
-
-
-import re  # Import regex module
 
 
 @chatbot_bp.route("/botchat/new_session", methods=["POST"])

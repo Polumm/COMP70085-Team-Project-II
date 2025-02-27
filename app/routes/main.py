@@ -2,6 +2,7 @@
 from flask import Blueprint, render_template
 from flask_login import current_user
 from app.routes.auth import login_required
+from app.routes.chatbot import multisession_chat
 
 main = Blueprint("main", __name__)
 
@@ -29,7 +30,7 @@ def friends():
 @main.route("/chatbot")
 @login_required
 def chatbot():
-    return render_template("bot_multisession.html")
+    return multisession_chat()
 
 
 @main.route("/saved")

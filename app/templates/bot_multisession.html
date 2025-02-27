@@ -1,117 +1,210 @@
+{% extends "base.html" %}
+
+{% block content %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Multi-Session Chat</title>
     <style>
+      body {
+          color: #ffffff;
+      }
+  
+      h1, h3 {
+          color: #ffffff;
+          text-shadow: 1px 1px 2px #000000;
+      }
+  
       .session-list {
-        float: left;
-        width: 20%;
-        border-right: 1px solid #ccc;
-        min-height: 400px;
+          float: left;
+          width: 20%;
+          border-right: 1px solid #444;
+          min-height: 400px;
+          padding: 10px;
+          background: rgba(0, 0, 0, 0.6);
+          color: #ffffff;
       }
+  
       .chat-area {
-        float: left;
-        width: 70%;
-        margin-left: 10px;
+          float: left;
+          width: 70%;
+          margin-left: 10px;
+          min-height: 400px;
+          padding: 10px;
+          background: rgba(0, 0, 0, 0.6);
+          color: #ffffff;
       }
+  
       .clearfix::after {
-        content: "";
-        clear: both;
-        display: block;
+          content: "";
+          clear: both;
+          display: block;
       }
-    </style>
+  
+      .active-session {
+          font-weight: bold;
+          background-color: #444;
+          color: #ffffff;
+          border-radius: 5px;
+          padding: 5px;
+      }
+  
+      ul li a {
+          color: #ffffff;
+          text-decoration: none;
+      }
+  
+      ul li a:hover {
+          text-decoration: underline;
+          color: #ffcc00;
+      }
+  
+      .chat-message {
+          margin: 5px 0;
+          padding: 5px;
+          border-radius: 5px;
+          background: rgba(255, 255, 255, 0.1);
+          color: #ffffff;
+      }
+  
+      .chat-message strong {
+          color: #ffcc00;
+      }
+  
+      input[type="text"] {
+          width: 80%;
+          padding: 5px;
+          border: 1px solid #555;
+          background: #333;
+          color: #fff;
+          border-radius: 5px;
+      }
+  
+      input[type="text"]::placeholder {
+          color: #ccc;
+      }
+  
+      button {
+          background: #ffcc00;
+          color: #000;
+          border: none;
+          padding: 5px 10px;
+          border-radius: 5px;
+          cursor: pointer;
+          transition: background 0.3s;
+      }
+  
+      button:hover {
+          background: #e6b800;
+      }
+  
+      a {
+          color: #ffcc00;
+          text-decoration: none;
+      }
+  
+      a:hover {
+          text-decoration: underline;
+      }
+  </style>
+  
 </head>
 <body>
 <h1>Chat with Bot (Multiple Sessions)</h1>
 <div>
-    <a href="{{ url_for('auth.logout') }}">Logout</a>
+    <a href="{{ url_for('main.home') }}">Back home</a>
 </div>
 <form action="{{ url_for('chatbot_bp.search_messages') }}" method="GET">
-  <input type="text" name="query" placeholder="Search your chat..." />
-  <button type="submit">Search</button>
+    <input type="text" name="query" placeholder="Search your chat..."/>
+    <button type="submit">Search</button>
 </form>
 <hr/>
 <div class="clearfix">
-  <!-- Left panel: List of sessions + form to create a new one -->
-  <div class="session-list">
-    <h3>Your Sessions</h3>
-    <ul>
-      {% if session_ids %}
-        {% for sid in session_ids %}
-          <li>
-            <a href="{{ url_for('chatbot_bp.select_session', session_id=sid) }}"
-               style="{% if sid == active_session_id %}font-weight: bold;{% endif %}">
-              {{ sid }}
-            </a>
-          </li>
-        {% endfor %}
-      {% else %}
-        <li>No sessions yet.</li>
-      {% endif %}
-    </ul>
-    <form action="{{ url_for('chatbot_bp.new_session') }}" method="POST">
-      <input type="text" name="session_name" placeholder="New session name"/>
-      <button type="submit">Create</button>
-    </form>
-  </div>
-
-  <!-- Right panel: Active session's messages + form to send message -->
-  <div class="chat-area">
-    {% if active_session_id %}
-      <h3>Session: {{ active_session_id }}</h3>
-      <p><a href="{{ url_for('chatbot_bp.delete_session', session_id=active_session_id) }}">Delete this session</a></p>
-      <hr/>
-      <div id="chatWindow">
-        {% for msg in messages %}
-          <p class="chat-message" data-time="{{ msg.time }}">
-            <strong>{{ msg.sender }}:</strong> {{ msg.text }}
-            {% if msg.time %}
-              <small>({{ msg.time }})</small>
+    <!-- Left panel: List of sessions + form to create a new one -->
+    <div class="session-list">
+        <h3>Your Sessions</h3>
+        <ul>
+            {% if session_ids %}
+                {% for sid in session_ids %}
+                    <li class="{% if sid == active_session_id %}active-session{% endif %}">
+                        <a href="{{ url_for('chatbot_bp.select_session', session_id=sid) }}">
+                            {{ sid }}
+                        </a>
+                    </li>
+                {% endfor %}
+            {% else %}
+                <li>No sessions yet.</li>
             {% endif %}
-          </p>
-        {% endfor %}
-      </div>      
-      <hr/>
-      <form action="{{ url_for('chatbot_bp.send_to_session') }}" method="POST">
-        <input type="hidden" name="session_id" value="{{ active_session_id }}">
-        <input type="text" name="message" placeholder="Type your message..."/>
-        <button type="submit">Send</button>
-      </form>
-    {% else %}
-      <h3>Please create or select a session.</h3>
-    {% endif %}
-  </div>
+        </ul>
+        <form action="{{ url_for('chatbot_bp.new_session') }}" method="POST">
+            <input type="text" name="session_name" placeholder="New session name"/>
+            <button type="submit">Create</button>
+        </form>
+    </div>
+
+    <!-- Right panel: Active session's messages + form to send message -->
+    <div class="chat-area">
+        {% if active_session_id %}
+            <h3>Session: {{ active_session_id }}</h3>
+            <p>
+                <a href="{{ url_for('chatbot_bp.delete_session', session_id=active_session_id) }}">
+                    Delete this session
+                </a>
+            </p>
+            <hr/>
+            <div id="chatWindow">
+                {% for msg in messages %}
+                    <p class="chat-message" data-time="{{ msg.time }}">
+                        <strong>{{ msg.sender }}:</strong> {{ msg.text }}
+                        {% if msg.time %}
+                            <small>({{ msg.time }})</small>
+                        {% endif %}
+                    </p>
+                {% endfor %}
+            </div>
+            <hr/>
+            <form action="{{ url_for('chatbot_bp.send_to_session') }}" method="POST">
+                <input type="hidden" name="session_id" value="{{ active_session_id }}">
+                <input type="text" name="message" placeholder="Type your message..."/>
+                <button type="submit">Send</button>
+            </form>
+        {% else %}
+            <h3>Please create or select a session.</h3>
+        {% endif %}
+    </div>
 </div>
 
 <!-- Display flashed messages (errors, confirmations) -->
 {% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul style="color:red;">
-      {% for message in messages %}
-        <li>{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+    {% if messages %}
+        <ul style="color:red;">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 {% endwith %}
 </body>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const messageTime = urlParams.get("message_time");
-  
-      if (messageTime) {
-          const messages = document.querySelectorAll(".chat-message");
-  
-          messages.forEach(msg => {
-              if (msg.dataset.time === messageTime) {
-                  msg.scrollIntoView({ behavior: "smooth", block: "center" });
-                  msg.style.backgroundColor = "#ffff99";  // Highlight effect
-              }
-          });
-      }
-  });
-  </script>
-  
+    document.addEventListener("DOMContentLoaded", function() {
+        const chatWindow = document.getElementById("chatWindow");
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const messageTime = urlParams.get("message_time");
+
+        if (messageTime) {
+            const messages = document.querySelectorAll(".chat-message");
+            messages.forEach(msg => {
+                if (msg.dataset.time === messageTime) {
+                    msg.scrollIntoView({ behavior: "smooth", block: "center" });
+                    msg.style.backgroundColor = "#ffff99";  // Highlight effect
+                }
+            });
+        }
+    });
+</script>
 </html>
+{% endblock %}
