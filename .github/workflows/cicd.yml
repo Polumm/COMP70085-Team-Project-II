@@ -46,30 +46,43 @@ jobs:
     needs: build-and-push-api
 
     steps:
-      - name: Deploy to server
+      - name: Deploy to Azure Container Instance
         uses: appleboy/ssh-action@v0.1.6
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SERVER_KEY }}
           script: |
-            set -e  # Exit on error
+            echo "🔹 Deleting existing Azure Container Instance (if any)..."
+            az container delete \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --name ${{ env.CONTAINER_NAME }} \
+              --yes \
+              || echo "No existing container to delete."
 
+            echo "🔹 Deploying new Azure Container Instance..."
             REPO_NAME=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
 
-            echo "🔹 Stopping existing container (if running)..."
-            docker stop movie-me || true  
-            docker rm movie-me || true   
+            az container create \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --name ${{ env.CONTAINER_NAME }} \
+              --image ghcr.io/$REPO_NAME/movie-me:latest \
+              --os-type Linux \
+              --cpu 1 \
+              --memory 1.5 \
+              --dns-name-label ${{ env.DNS_LABEL }} \
+              --ports ${{ env.PORT }} \
+              --environment-variables \
+                DB_SERVICE_URL="${{ secrets.DB_SERVICE_URL }}" \
+                CHATBOT_URL="${{ secrets.CHATBOT_URL }}"
 
-            echo "🔹 Pulling latest Docker image..."
-            docker pull ghcr.io/$REPO_NAME/movie-me:latest
-
-            echo "🔹 Running new container..."
-            docker run -d --name movie-me -p 5000:5000 \
-              -e FLASK_ENV=deployment \
-              -e CHATBOT_URL="${{secrets.CHATBOT_URL}}" \
-              -e DB_SERVICE_URL="${{secrets.DB_SERVICE_URL}}" \
-              ghcr.io/$REPO_NAME/movie-me:latest
+            # rather than below (below is the old way)
+            # echo "🔹 Running new container..."
+            # docker run -d --name movie-me -p 5000:5000 \
+            #   -e FLASK_ENV=deployment \
+            #   -e CHATBOT_URL="${{secrets.CHATBOT_URL}}" \
+            #   -e DB_SERVICE_URL="${{secrets.DB_SERVICE_URL}}" \
+            #   ghcr.io/$REPO_NAME/movie-me:latest
 
             echo "✅ Deployment complete!"
             exit 0

@@ -1,14 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <title>Search Results</title>
+    <style>
+      body {
+          color: #ffffff;
+      }
+  
+      h1 {
+          color: #ffcc00;
+          text-shadow: 1px 1px 2px #000000;
+      }
+  
+      a {
+          color: #ffcc00;
+          text-decoration: none;
+      }
+  
+      a:hover {
+          text-decoration: underline;
+          color: #ffd633;
+      }
+  
+      .search-results-container {
+          background: rgba(0, 0, 0, 0.6);
+          padding: 20px;
+          border-radius: 10px;
+          color: #ffffff;
+          width: 80%;
+          margin: 0 auto;
+          box-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
+      }
+  
+      .search-results-container hr {
+          border: 0;
+          border-top: 1px solid #444;
+      }
+  
+      ul.search-results {
+          list-style: none;
+          padding: 0;
+      }
+  
+      ul.search-results li {
+          background: rgba(255, 255, 255, 0.1);
+          padding: 10px;
+          margin: 10px 0;
+          border-radius: 5px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+          transition: background 0.3s;
+      }
+  
+      ul.search-results li:hover {
+          background: rgba(255, 255, 255, 0.2);
+      }
+  
+      ul.search-results li strong {
+          color: #ffcc00;
+      }
+  
+      ul.search-results li small {
+          color: #cccccc;
+      }
+  
+      .back-link {
+          display: inline-block;
+          background: #444;
+          color: #ffffff;
+          padding: 5px 10px;
+          border-radius: 5px;
+          text-decoration: none;
+          transition: background 0.3s;
+      }
+  
+      .back-link:hover {
+          background: #555;
+      }
+  
+      .flashed-messages {
+          color: #ff6666;
+          font-weight: bold;
+          list-style: none;
+      }
+  </style>  
 </head>
 <body>
 <h1>Search Results for "{{ query }}"</h1>
 
 <div>
-    <a href="{{ url_for('client.multisession_chat') }}">Back to Chat Sessions</a>
+    <a href="{{ url_for('chatbot_bp.multisession_chat') }}">Back to Chat Sessions</a>
 </div>
 <hr/>
 
@@ -18,7 +102,7 @@
         {% for row in results %}
             <li>
                 <strong>Session:</strong> 
-                <a href="{{ url_for('client.multisession_chat', session_id=row.session_id, message_time=row.time) }}">
+                <a href="{{ url_for('chatbot_bp.multisession_chat', session_id=row.session_id, message_time=row.time) }}">
                     {{ row.session_id }}
                 </a> 
                 |
@@ -45,3 +129,4 @@
 
 </body>
 </html>
+{% endblock %}
