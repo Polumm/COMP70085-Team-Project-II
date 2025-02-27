@@ -1,77 +1,159 @@
 {% extends "base.html" %}
-
 {% block content %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8"/>
     <title>Multi-Session Chat</title>
     <style>
+      /* 
+       * Overall page styling 
+       */
       body {
           color: #ffffff;
+          background-color: #1c1c1c; /* A darker background for contrast */
+          font-family: Arial, sans-serif;
+          margin: 0; /* Ensure no default body margin that can cause layout shifts */
+          padding: 0;
       }
-  
       h1, h3 {
           color: #ffffff;
           text-shadow: 1px 1px 2px #000000;
       }
-  
-      .session-list {
-          float: left;
-          width: 20%;
-          border-right: 1px solid #444;
-          min-height: 400px;
-          padding: 10px;
-          background: rgba(0, 0, 0, 0.6);
-          color: #ffffff;
-      }
-  
-      .chat-area {
-          float: left;
-          width: 70%;
-          margin-left: 10px;
-          min-height: 400px;
-          padding: 10px;
-          background: rgba(0, 0, 0, 0.6);
-          color: #ffffff;
-      }
-  
-      .clearfix::after {
+
+      /* 
+       * We remove the old float-based .clearfix approach and rely on Flexbox below 
+       */
+      /* .clearfix::after {
           content: "";
           clear: both;
           display: block;
+      } */
+
+      /*
+       * Main container that holds both the session list (sidebar) and the chat area.
+       * Using Flexbox ensures they align horizontally without pushing the chat area down.
+       */
+      .main-container {
+          display: flex;
+          align-items: flex-start;   /* Align items at the top edge */
+          gap: 20px;                 /* Space between columns; adjust as needed */
+          margin: 20px;             /* Some outer spacing for aesthetics */
       }
-  
+
+      /* 
+       * Sidebar (Sessions) 
+       */
+      .session-list {
+          /* Removed float and width, replaced with Flex rules. */
+          flex: 0 0 20%;            /* Sidebar uses ~20% of the horizontal space */
+          min-height: 400px;
+          padding: 10px;
+          background: rgba(0, 0, 0, 0.6);
+          border-right: 1px solid #444; /* Keep if you like the vertical line. */
+      }
+
+      .session-list h3 {
+          margin-top: 0;
+      }
+      .session-list ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+      }
+      .session-list li {
+          margin: 5px 0;
+      }
       .active-session {
           font-weight: bold;
           background-color: #444;
-          color: #ffffff;
           border-radius: 5px;
           padding: 5px;
       }
-  
-      ul li a {
-          color: #ffffff;
-          text-decoration: none;
+      .session-list input[type="text"] {
+          width: 90%;
+          margin-bottom: 5px;
       }
-  
-      ul li a:hover {
-          text-decoration: underline;
-          color: #ffcc00;
+
+      /*
+       * Main chat area 
+       */
+      .chat-area {
+          /* Removed float: left; width: 75%; margin-left: 5%; */
+          flex: 1;                /* Takes the remaining width of the container */
+          min-height: 400px;
+          padding: 10px;
+          background: rgba(0, 0, 0, 0.6);
       }
-  
+
+      /* 
+       * Chat messages container 
+       */
+      #chatWindow {
+          max-height: 500px;          /* So it doesn’t grow indefinitely */
+          overflow-y: auto;           /* Allow vertical scrolling */
+          padding: 10px;
+          border: 1px solid #444;
+          border-radius: 5px;
+          background-color: rgba(0, 0, 0, 0.3);
+      }
+
+      /* 
+       * Individual message "bubble" layout using Flex 
+       */
+      .message-row {
+          display: flex;
+          margin-bottom: 10px;
+      }
+      .message-row.user {
+          justify-content: flex-end; /* Align user messages on the right */
+      }
+      .message-row.bot {
+          justify-content: flex-start; /* Align bot messages on the left */
+      }
+
+      /* 
+       * The bubble itself 
+       */
       .chat-message {
-          margin: 5px 0;
-          padding: 5px;
-          border-radius: 5px;
-          background: rgba(255, 255, 255, 0.1);
+          max-width: 70%;
+          padding: 10px;
+          border-radius: 10px;
+          background-color: #333;
           color: #ffffff;
+          position: relative;
+          line-height: 1.4;
       }
-  
-      .chat-message strong {
+
+      /*
+       * Differentiate user vs bot message
+       */
+      .user .chat-message {
+          background-color: #4b4b4b;
+      }
+      .bot .chat-message {
+          background-color: #2a2a2a;
+      }
+
+      /* 
+       * Name & time styling 
+       */
+      .message-sender {
+          font-weight: bold;
           color: #ffcc00;
+          margin-bottom: 5px;
       }
-  
+      .message-time {
+          font-size: 0.8em;
+          color: #ccc;
+          margin-top: 5px;
+          display: block;
+          text-align: right;
+      }
+
+      /* 
+       * Buttons & input styling 
+       */
       input[type="text"] {
           width: 80%;
           padding: 5px;
@@ -80,11 +162,9 @@
           color: #fff;
           border-radius: 5px;
       }
-  
       input[type="text"]::placeholder {
-          color: #ccc;
+          color: #aaa;
       }
-  
       button {
           background: #ffcc00;
           color: #000;
@@ -94,34 +174,37 @@
           cursor: pointer;
           transition: background 0.3s;
       }
-  
       button:hover {
           background: #e6b800;
       }
-  
+
       a {
           color: #ffcc00;
           text-decoration: none;
       }
-  
       a:hover {
           text-decoration: underline;
       }
-  </style>
-  
+    </style>
 </head>
 <body>
+
 <h1>Chat with Bot (Multiple Sessions)</h1>
 <div>
     <a href="{{ url_for('main.home') }}">Back home</a>
 </div>
+
+<!-- Search form -->
 <form action="{{ url_for('chatbot_bp.search_messages') }}" method="GET">
     <input type="text" name="query" placeholder="Search your chat..."/>
     <button type="submit">Search</button>
 </form>
+
 <hr/>
-<div class="clearfix">
-    <!-- Left panel: List of sessions + form to create a new one -->
+
+<!-- .main-container now uses Flexbox for proper side-by-side alignment -->
+<div class="main-container">
+    <!-- Sessions Sidebar -->
     <div class="session-list">
         <h3>Your Sessions</h3>
         <ul>
@@ -143,7 +226,7 @@
         </form>
     </div>
 
-    <!-- Right panel: Active session's messages + form to send message -->
+    <!-- Main Chat Window -->
     <div class="chat-area">
         {% if active_session_id %}
             <h3>Session: {{ active_session_id }}</h3>
@@ -153,27 +236,74 @@
                 </a>
             </p>
             <hr/>
+
             <div id="chatWindow">
                 {% for msg in messages %}
-                    <p class="chat-message" data-time="{{ msg.time }}">
-                        <strong>{{ msg.sender }}:</strong> {{ msg.text }}
-                        {% if msg.time %}
-                            <small>({{ msg.time }})</small>
-                        {% endif %}
-                    </p>
+                    {% if msg.sender == "bot" %}
+                        <!-- BOT message row -->
+                        <div class="message-row bot" data-time="{{ msg.time }}">
+                            <div class="chat-message">
+                                <div class="message-sender">bot</div>
+                                {# Try parsing as JSON to see if we have multiple_choice or fill_in #}
+                                {% set parsed_json = msg.text|load_json(false) %}
+                                {% if parsed_json is mapping %}
+                                    {% set rtype = parsed_json.get('response_type', 'text') %}
+                                    {% if rtype == 'multiple_choice' %}
+                                        <p>{{ parsed_json.prompt }}</p>
+                                        <ul style="list-style:none; padding:0; margin:0;">
+                                            {% for opt in parsed_json.options %}
+                                            <li style="margin:4px 0;">
+                                                <button onclick="sendOption('{{ opt }}', '{{ active_session_id }}')">
+                                                    {{ opt }}
+                                                </button>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% elif rtype == 'fill_in' %}
+                                        <p>{{ parsed_json.prompt }}</p>
+                                        <input type="text" id="fillInAnswer{{ loop.index }}" placeholder="{{ parsed_json.placeholder }}">
+                                        <button onclick="sendFillIn('{{ active_session_id }}', 'fillInAnswer{{ loop.index }}')">Submit</button>
+                                    {% else %}
+                                        <!-- fallback to normal text -->
+                                        <p>{{ parsed_json.response }}</p>
+                                    {% endif %}
+                                {% else %}
+                                    <!-- Not valid JSON, or no response_type property. Just show text. -->
+                                    <p>{{ msg.text }}</p>
+                                {% endif %}
+                                {% if msg.time %}
+                                    <span class="message-time">({{ msg.time }})</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- USER message row -->
+                        <div class="message-row user" data-time="{{ msg.time }}">
+                            <div class="chat-message">
+                                <div class="message-sender">user</div>
+                                <p>{{ msg.text }}</p>
+                                {% if msg.time %}
+                                    <span class="message-time">({{ msg.time }})</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
                 {% endfor %}
-            </div>
+            </div> <!-- #chatWindow -->
+
             <hr/>
-            <form action="{{ url_for('chatbot_bp.send_to_session') }}" method="POST">
+
+            <!-- Input to send new message -->
+            <form action="{{ url_for('chatbot_bp.send_to_session') }}" method="POST" style="margin-top:10px;">
                 <input type="hidden" name="session_id" value="{{ active_session_id }}">
-                <input type="text" name="message" placeholder="Type your message..."/>
+                <input type="text" name="message" placeholder="Type your message..." />
                 <button type="submit">Send</button>
             </form>
         {% else %}
             <h3>Please create or select a session.</h3>
         {% endif %}
-    </div>
-</div>
+    </div> <!-- .chat-area -->
+</div> <!-- .main-container -->
 
 <!-- Display flashed messages (errors, confirmations) -->
 {% with messages = get_flashed_messages() %}
@@ -185,26 +315,66 @@
         </ul>
     {% endif %}
 {% endwith %}
-</body>
 
 <script>
+    // Automatically scroll to bottom
     document.addEventListener("DOMContentLoaded", function() {
         const chatWindow = document.getElementById("chatWindow");
-        chatWindow.scrollTop = chatWindow.scrollHeight;
+        if(chatWindow) {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
 
+        // If there's a message_time in query params, scroll/highlight it
         const urlParams = new URLSearchParams(window.location.search);
         const messageTime = urlParams.get("message_time");
-
         if (messageTime) {
-            const messages = document.querySelectorAll(".chat-message");
+            const messages = document.querySelectorAll(".message-row");
             messages.forEach(msg => {
                 if (msg.dataset.time === messageTime) {
                     msg.scrollIntoView({ behavior: "smooth", block: "center" });
-                    msg.style.backgroundColor = "#ffff99";  // Highlight effect
+                    msg.querySelector(".chat-message").style.backgroundColor = "#555555";
                 }
             });
         }
     });
+
+    // Send a multiple-choice selection to the same route
+    function sendOption(optionValue, sessionId) {
+        const formData = new FormData();
+        formData.append('session_id', sessionId);
+        formData.append('message', optionValue);
+
+        fetch("{{ url_for('chatbot_bp.send_to_session') }}", {
+            method: "POST",
+            body: formData
+        }).then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            }
+        });
+    }
+
+    // Send a fill-in answer to the same route
+    function sendFillIn(sessionId, inputId) {
+        const fillInValue = document.getElementById(inputId).value.trim();
+        if (!fillInValue) {
+            alert("Please enter your answer first.");
+            return;
+        }
+        const formData = new FormData();
+        formData.append('session_id', sessionId);
+        formData.append('message', fillInValue);
+
+        fetch("{{ url_for('chatbot_bp.send_to_session') }}", {
+            method: "POST",
+            body: formData
+        }).then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            }
+        });
+    }
 </script>
+</body>
 </html>
 {% endblock %}
