@@ -71,7 +71,7 @@ jobs:
               --cpu 1 \
               --memory 1.5 \
               --dns-name-label movie-me \
-              --ports 6004 \
+              --ports 5000 \
               --environment-variables \
                 DB_SERVICE_URL="${{ secrets.DB_SERVICE_URL }}" \
                 CHATBOT_URL="${{ secrets.CHATBOT_URL }}"
