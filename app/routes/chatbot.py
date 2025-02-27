@@ -1,6 +1,7 @@
 import requests
 import os
 import re  # Import regex module
+import json
 from datetime import datetime, timedelta
 from flask import (
     Blueprint,
@@ -332,14 +333,12 @@ def send_to_session():
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # 1) Store user's message in DB microservice
-    #    We keep "username" = real user (so the conversation key is the same),
-    #    but "sender" = "user" to label who wrote the message.
     try:
         user_store_resp = requests.post(
             f"{DB_SERVICE_URL}/botchat/messages",
             json={
-                "username": username,  # Real user for the conversation key
-                "sender": "user",  # Distinguish user vs. bot
+                "username": username,
+                "sender": "user",
                 "session_id": session_id,
                 "message": user_message,
                 "time": timestamp,
@@ -368,21 +367,26 @@ def send_to_session():
             timeout=5,
         )
         if bot_resp.status_code == 200:
-            bot_text = bot_resp.json().get("response", "Bot did not respond.")
+            bot_json = bot_resp.json()
+            bot_text = json.dumps(
+                bot_json
+            )  # Store the entire JSON response as a string
         else:
-            bot_text = "Bot did not respond."
+            bot_text = json.dumps(
+                {"response_type": "text", "response": "Bot did not respond."}
+            )
     except requests.exceptions.RequestException:
-        bot_text = "Error contacting chatbot."
+        bot_text = json.dumps(
+            {"response_type": "text", "response": "Error contacting chatbot."}
+        )
 
     # 3) Store the bot's response in DB microservice
-    #    Notice we still pass "username" = real user,
-    #    but now "sender" = "bot".
     try:
         bot_store_resp = requests.post(
             f"{DB_SERVICE_URL}/botchat/messages",
             json={
-                "username": username,  # same conversation key as user
-                "sender": "bot",  # marks it as bot's message
+                "username": username,
+                "sender": "bot",
                 "session_id": session_id,
                 "message": bot_text,
                 "time": (datetime.now() + timedelta(seconds=1)).strftime(
@@ -400,7 +404,6 @@ def send_to_session():
     except requests.exceptions.RequestException:
         flash("Error contacting DB service to store bot response.", "error")
 
-    # Redirect back to the chat page
     return redirect(
         url_for("chatbot_bp.multisession_chat", session_id=session_id)
     )

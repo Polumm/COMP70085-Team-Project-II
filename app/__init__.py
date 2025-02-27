@@ -5,6 +5,7 @@ from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
 from app.config import Config
 import os
+import json
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -13,6 +14,14 @@ login_manager = LoginManager()
 login_manager.login_view = (
     "auth.login"  # Redirects unauthorized users to login page
 )
+
+
+def load_json_filter(s, default=None):
+    """Custom Jinja filter to parse JSON strings into Python objects."""
+    try:
+        return json.loads(s)
+    except (ValueError, TypeError):
+        return default
 
 
 def create_app():
@@ -34,6 +43,9 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
+    # Register Jinja filter with the main app
+    app.jinja_env.filters["load_json"] = load_json_filter
+    
     # Import and register Blueprints
     from app.routes.main import main
     from app.routes.search import search
