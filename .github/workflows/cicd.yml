@@ -55,8 +55,8 @@ jobs:
           script: |
             echo "🔹 Deleting existing Azure Container Instance (if any)..."
             az container delete \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --name ${{ env.CONTAINER_NAME }} \
+              --resource-group sse-cloud-lab \
+              --name movie-me \
               --yes \
               || echo "No existing container to delete."
 
@@ -64,14 +64,14 @@ jobs:
             REPO_NAME=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
 
             az container create \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --name ${{ env.CONTAINER_NAME }} \
+              --resource-group sse-cloud-lab \
+              --name movie-me \
               --image ghcr.io/$REPO_NAME/movie-me:latest \
               --os-type Linux \
               --cpu 1 \
               --memory 1.5 \
-              --dns-name-label ${{ env.DNS_LABEL }} \
-              --ports ${{ env.PORT }} \
+              --dns-name-label movie-me \
+              --ports 6004 \
               --environment-variables \
                 DB_SERVICE_URL="${{ secrets.DB_SERVICE_URL }}" \
                 CHATBOT_URL="${{ secrets.CHATBOT_URL }}"
