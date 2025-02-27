@@ -112,6 +112,15 @@ body {
     background: #836daf;
 }
 
+.logout-btn {
+    background: #5010b5;
+    color: white;
+}
+
+.logout-btn:hover {
+    background: #836daf;
+}
+
 
 /* Welcome Message */
 .welcome-message {

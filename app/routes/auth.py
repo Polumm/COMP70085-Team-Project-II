@@ -171,4 +171,4 @@ def logout():
     """
     session.pop("token", None)
     flash("Logged out successfully.", "success")
-    return redirect(url_for("auth.login"))
+    return redirect(url_for("main.home"))
