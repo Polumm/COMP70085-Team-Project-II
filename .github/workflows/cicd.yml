@@ -1,4 +1,4 @@
-name: CI/CD for ChatBot Database
+name: CI/CD for movie-me
 
 on:
   push:
