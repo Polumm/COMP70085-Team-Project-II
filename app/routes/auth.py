@@ -12,33 +12,29 @@ from flask import (
 from app.forms import LoginForm, SignupForm
 from functools import wraps
 import requests
+import os
 import jwt
 from datetime import datetime, timedelta, timezone
 from werkzeug.security import check_password_hash
 
 # Blueprint Configuration
 auth = Blueprint("auth", __name__)
+DB_SERVICE_URL = os.getenv("DB_SERVICE_URL")
 
 
 # ----------------------------------------------------
 # JWT Helpers
 # ----------------------------------------------------
 def generate_jwt(username, expires_in=3600):
-    """
-    Generate a JWT that expires in 'expires_in' seconds.
-    """
     payload = {
         "username": username,
         "exp": datetime.now(timezone.utc) + timedelta(seconds=expires_in),
     }
-    secret_key = current_app.config["SECRET_KEY"]  # Get from Flask config
+    secret_key = current_app.config["SECRET_KEY"]
     return jwt.encode(payload, secret_key, algorithm="HS256")
 
 
 def decode_jwt(token):
-    """
-    Decode a JWT, returning its payload or None if invalid/expired.
-    """
     try:
         secret_key = current_app.config["SECRET_KEY"]
         return jwt.decode(token, secret_key, algorithms=["HS256"])
@@ -46,12 +42,21 @@ def decode_jwt(token):
         return None
 
 
-def login_required(func):
+def sync_user_sessions(username):
     """
-    Custom decorator to ensure a user is logged in.
-    If not, redirect to the login page with 'next' parameter.
+    Instructs the DB microservice to sync all sessions for a user.
     """
+    try:
+        sync_resp = requests.post(
+            f"{DB_SERVICE_URL}/botchat/logout/{username}", timeout=5
+        )
+        if sync_resp.status_code != 200:
+            flash("Warning: Could not fully sync sessions.", "warning")
+    except requests.exceptions.RequestException:
+        flash("DB service unavailable; could not sync sessions.", "warning")
 
+
+def login_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         token = session.get("token")
@@ -62,11 +67,16 @@ def login_required(func):
 
         payload = decode_jwt(token)
         if not payload:
-            flash("Session expired. Please log in again.")
-            session.pop("token", None)
+            flash(
+                "Session expired. Syncing data and redirecting to login.",
+                "warning",
+            )
+            token = session.pop("token", None)
+            if token:
+                username = decode_jwt(token).get("username")
+                if username:
+                    sync_user_sessions(username)
             return redirect(url_for("auth.login", next=request.url))
-
-        # Store username in flask.g for downstream routes
         g.username = payload["username"]
         return func(*args, **kwargs)
 
@@ -89,23 +99,16 @@ def login():
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
-
-        # Call DB microservice to authenticate user
         try:
             resp = requests.get(
-                f"{current_app.config['DB_SERVICE_URL']}/users/{username}",
-                timeout=5,
+                f"{DB_SERVICE_URL}/users/{username}", timeout=5
             )
             if resp.status_code == 200:
                 user_data = resp.json()
                 if check_password_hash(user_data["password_hash"], password):
-                    # Generate JWT and store in session
                     token = generate_jwt(username)
                     session["token"] = token
                     flash("Login successful!", "success")
-
-                    # Redirect to the originally requested page,
-                    # or go to the multi-session chat by default
                     return redirect(next_page or url_for("main.home"))
                 else:
                     flash("Invalid credentials.", "danger")
@@ -113,8 +116,20 @@ def login():
                 flash("User not found.", "danger")
         except requests.exceptions.RequestException:
             flash("Error contacting user service.", "danger")
-
     return render_template("login.html", form=form)
+
+
+# ----------------------------------------------------
+# Logout Route
+# ----------------------------------------------------
+@auth.route("/logout")
+@login_required
+def logout():
+    username = g.username
+    sync_user_sessions(username)  # Sync all sessions before logout
+    session.pop("token", None)
+    flash("Logged out successfully.", "success")
+    return redirect(url_for("main.home"))
 
 
 # ----------------------------------------------------
@@ -158,17 +173,3 @@ def signup():
             flash("Error contacting user service.", "danger")
 
     return render_template("signup.html", form=form)
-
-
-# ----------------------------------------------------
-# Logout Route
-# ----------------------------------------------------
-@auth.route("/logout")
-@login_required
-def logout():
-    """
-    Logout the user by clearing the JWT token from session.
-    """
-    session.pop("token", None)
-    flash("Logged out successfully.", "success")
-    return redirect(url_for("main.home"))
