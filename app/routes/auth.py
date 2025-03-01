@@ -8,6 +8,7 @@ from flask import (
     g,
     current_app,
     request,
+    jsonify,
 )
 from app.forms import LoginForm, SignupForm
 from functools import wraps
@@ -130,6 +131,34 @@ def logout():
     session.pop("token", None)
     flash("Logged out successfully.", "success")
     return redirect(url_for("main.home"))
+
+
+# ----------------------------------------------------
+# Heartbeat Route
+# ----------------------------------------------------
+@auth.route("/heartbeat", methods=["POST"])
+@login_required
+def heartbeat():
+    """
+    Update last-seen time for the user's session in the DB microservice.
+    """
+    username = g.username
+    token = session.get("token")
+    if token:
+        payload = decode_jwt(token)
+        if payload:
+            try:
+                requests.post(
+                    f"{DB_SERVICE_URL}/botchat/update_session_expiry",
+                    json={"username": username, "exp": payload["exp"]},
+                    timeout=5,
+                )
+            except requests.exceptions.RequestException:
+                flash(
+                    "Error contacting DB service to update session expiry.",
+                    "warning",
+                )
+    return jsonify({"status": "ok"})
 
 
 # ----------------------------------------------------

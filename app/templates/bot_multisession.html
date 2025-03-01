@@ -374,6 +374,14 @@
             }
         });
     }
+
+    // Send a heartbeat to let backend know when to sync
+    setInterval(() => {
+        fetch("/auth/heartbeat", { method: "POST", credentials: "include" })
+            .then(response => response.json())
+            .catch(error => console.error("Heartbeat failed:", error));
+    }, 120000);  // Send heartbeat every 2 minutes
+    
 </script>
 </body>
 </html>
