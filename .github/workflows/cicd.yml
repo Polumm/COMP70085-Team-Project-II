@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 env:
   PAT: ${{ secrets.PAT }}  
@@ -54,8 +51,6 @@ jobs:
           key: ${{ secrets.SERVER_KEY }}
           script: |
             echo "🔹 Deleting existing Azure Container Instance (if any)..."
-            az container stop --resource-group sse-cloud-lab --name movie-me || true
-            
             az container delete \
               --resource-group sse-cloud-lab \
               --name movie-me \
