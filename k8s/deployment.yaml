@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movie-me
+  labels:
+    app: movie-me
+spec:
+  replicas: 2  # Adjust the number of replicas for scaling
+  selector:
+    matchLabels:
+      app: movie-me
+  template:
+    metadata:
+      labels:
+        app: movie-me
+    spec:
+      containers:
+        - name: movie-me
+          image: ghcr.io/polumm/movie-me:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: FLASK_ENV
+              value: "deployment"
+            - name: CHATBOT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: chatbot-secrets
+                  key: CHATBOT_URL
+            - name: DB_SERVICE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: chatbot-secrets
+                  key: DB_SERVICE_URL
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: movie-me-service
+spec:
+  selector:
+    app: movie-me
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  type: LoadBalancer  # Change to ClusterIP if using Ingress
