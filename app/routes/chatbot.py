@@ -2,6 +2,7 @@ import requests
 import os
 import re  # Import regex module
 import json
+import time
 from datetime import datetime, timedelta
 from flask import (
     Blueprint,
@@ -203,12 +204,16 @@ def multisession_chat():
 def _fetch_sessions_with_retry(username, max_attempts=2):
     """
     Tries to get the session list from the DB microservice up to `max_attempts` times.
+    First attempt has a 1s timeout, if it fails, wait 1s and retry with a 5s timeout.
     Returns a list of session IDs (or empty list on failure).
     """
+    timeouts = [1, 5]  # Timeout values for the first and second attempt
+
     for attempt in range(max_attempts):
         try:
             resp = requests.get(
-                f"{DB_SERVICE_URL}/botchat/sessions/{username}", timeout=5
+                f"{DB_SERVICE_URL}/botchat/sessions/{username}",
+                timeout=timeouts[attempt],
             )
             if resp.status_code == 200:
                 data = resp.json()
@@ -216,7 +221,9 @@ def _fetch_sessions_with_retry(username, max_attempts=2):
             else:
                 flash("Error retrieving sessions.", "error")
         except requests.exceptions.RequestException:
-            if attempt == max_attempts - 1:
+            if attempt < max_attempts - 1:
+                time.sleep(1)  # Sleep for 1s before retrying
+            else:
                 flash(
                     "Database service is unavailable. Some functionality may be limited.",
                     "warning",
