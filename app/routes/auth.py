@@ -102,23 +102,49 @@ def login():
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
-        try:
-            resp = requests.get(
-                f"{DB_SERVICE_URL}/users/{username}", timeout=5
-            )
-            if resp.status_code == 200:
-                user_data = resp.json()
-                if check_password_hash(user_data["password_hash"], password):
-                    token = generate_jwt(username)
-                    session["token"] = token
-                    flash("Login successful!", "success")
-                    return redirect(next_page or url_for("main.home"))
+
+        # We'll retry the GET /users/<username> call up to 2 times
+        max_attempts = 2
+        user_data = None
+        service_error = False
+
+        for attempt in range(max_attempts):
+            try:
+                resp = requests.get(
+                    f"{DB_SERVICE_URL}/users/{username}", timeout=5
+                )
+                if resp.status_code == 200:
+                    user_data = resp.json()
                 else:
-                    flash("Invalid credentials.", "danger")
-            else:
-                flash("User not found.", "danger")
-        except requests.exceptions.RequestException:
+                    # e.g. 404 => "User not found"
+                    flash("User not found.", "danger")
+                # Break out of the for-loop if we got a valid response (200 or 404)
+                break
+            except requests.exceptions.RequestException:
+                # If it's the last attempt, set service_error => True
+                if attempt == max_attempts - 1:
+                    service_error = True
+
+        # If both attempts failed with a RequestException:
+        if service_error:
             flash("Error contacting user service.", "danger")
+            return render_template("login.html", form=form)
+
+        # If user_data is None, it means we got a non-200 response (404 or something else)
+        # But we already flashed "User not found." or "Error contacting user service."
+        # so just re-render the form:
+        if not user_data:
+            return render_template("login.html", form=form)
+
+        # Otherwise, check password:
+        if check_password_hash(user_data["password_hash"], password):
+            token = generate_jwt(username)
+            session["token"] = token
+            flash("Login successful!", "success")
+            return redirect(next_page or url_for("main.home"))
+        else:
+            flash("Invalid credentials.", "danger")
+
     return render_template("login.html", form=form)
 
 
