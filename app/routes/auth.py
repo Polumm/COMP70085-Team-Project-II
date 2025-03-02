@@ -58,12 +58,13 @@ def sync_user_sessions(username):
 
 
 def login_required(func):
+    """Decorator to enforce authentication."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         token = session.get("token")
         if not token:
             flash("Please log in first.")
-            # Preserve the next page the user was trying to access
             return redirect(url_for("auth.login", next=request.url))
 
         payload = decode_jwt(token)
@@ -74,11 +75,12 @@ def login_required(func):
             )
             token = session.pop("token", None)
             if token:
-                username = decode_jwt(token).get("username")
-                if username:
-                    sync_user_sessions(username)
+                payload = decode_jwt(token)
+                if payload:
+                    sync_user_sessions(payload.get("username"))
             return redirect(url_for("auth.login", next=request.url))
-        g.username = payload["username"]
+
+        g.username = payload.get("username")
         return func(*args, **kwargs)
 
     return wrapper

@@ -177,22 +177,8 @@ def sync_session(session_id):
 def multisession_chat():
     username = g.username
 
-    # Retrieve sessions for the current user
-    session_ids = []
-    try:
-        resp = requests.get(
-            f"{DB_SERVICE_URL}/botchat/sessions/{username}", timeout=5
-        )
-        if resp.status_code == 200:
-            session_data = resp.json()
-            session_ids = sorted(session_data.get("sessions", []))
-        else:
-            flash("Error retrieving sessions.", "error")
-    except requests.exceptions.RequestException:
-        flash(
-            "Database service is unavailable. Some functionality may be limited.",
-            "warning",
-        )
+    # Try to retrieve sessions twice if the first fails
+    session_ids = _fetch_sessions_with_retry(username, max_attempts=2)
 
     # Automatically select the first session if none is active
     session_id = request.args.get(
@@ -202,21 +188,9 @@ def multisession_chat():
     # Retrieve messages for the active session
     messages = []
     if session_id:
-        try:
-            resp = requests.get(
-                f"{DB_SERVICE_URL}/botchat/messages/{username}/{session_id}",
-                timeout=5,
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                messages = data.get("messages", [])
-            else:
-                flash("Error retrieving messages.", "error")
-        except requests.exceptions.RequestException:
-            flash(
-                "Database service is unavailable. Messages may not load.",
-                "warning",
-            )
+        messages = _fetch_messages_with_retry(
+            username, session_id, max_attempts=2
+        )
 
     return render_template(
         "bot_multisession.html",
@@ -224,6 +198,54 @@ def multisession_chat():
         active_session_id=session_id,
         messages=messages,
     )
+
+
+def _fetch_sessions_with_retry(username, max_attempts=2):
+    """
+    Tries to get the session list from the DB microservice up to `max_attempts` times.
+    Returns a list of session IDs (or empty list on failure).
+    """
+    for attempt in range(max_attempts):
+        try:
+            resp = requests.get(
+                f"{DB_SERVICE_URL}/botchat/sessions/{username}", timeout=5
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                return sorted(data.get("sessions", []))
+            else:
+                flash("Error retrieving sessions.", "error")
+        except requests.exceptions.RequestException:
+            if attempt == max_attempts - 1:
+                flash(
+                    "Database service is unavailable. Some functionality may be limited.",
+                    "warning",
+                )
+    return []
+
+
+def _fetch_messages_with_retry(username, session_id, max_attempts=2):
+    """
+    Tries to get the messages from the DB microservice up to `max_attempts` times.
+    Returns a list of messages (or empty list on failure).
+    """
+    for attempt in range(max_attempts):
+        try:
+            resp = requests.get(
+                f"{DB_SERVICE_URL}/botchat/messages/{username}/{session_id}",
+                timeout=5,
+            )
+            if resp.status_code == 200:
+                return resp.json().get("messages", [])
+            else:
+                flash("Error retrieving messages.", "error")
+        except requests.exceptions.RequestException:
+            if attempt == max_attempts - 1:
+                flash(
+                    "Database service is unavailable. Messages may not load.",
+                    "warning",
+                )
+    return []
 
 
 @chatbot_bp.route("/botchat/new_session", methods=["POST"])

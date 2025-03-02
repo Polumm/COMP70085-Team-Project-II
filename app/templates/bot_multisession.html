@@ -375,13 +375,26 @@
         });
     }
 
-    // Send a heartbeat to let backend know when to sync
-    setInterval(() => {
-        fetch("/auth/heartbeat", { method: "POST", credentials: "include" })
-            .then(response => response.json())
-            .catch(error => console.error("Heartbeat failed:", error));
-    }, 120000);  // Send heartbeat every 2 minutes
-    
+    // Define the function that actually sends the heartbeat
+    function sendHeartbeat() {
+        fetch("/auth/heartbeat", {
+            method: "POST",
+            credentials: "include"
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Heartbeat successful:", data);
+        })
+        .catch(error => {
+            console.error("Heartbeat failed:", error);
+        });
+    }
+
+    // Send a heartbeat every 2 minutes
+    setInterval(sendHeartbeat, 120000);
+
+    // Send a heartbeat immediately when the DOM is loaded
+    document.addEventListener("DOMContentLoaded", sendHeartbeat);
 </script>
 </body>
 </html>
