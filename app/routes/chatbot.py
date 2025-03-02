@@ -211,11 +211,16 @@ def _fetch_sessions_with_retry(username, max_attempts=2):
                 f"{DB_SERVICE_URL}/botchat/sessions/{username}", timeout=5
             )
             if resp.status_code == 200:
+                print("Debug: Sessions found")
                 data = resp.json()
                 return sorted(data.get("sessions", []))
             else:
+                print("Debug: Sessions not found")
                 flash("Error retrieving sessions.", "error")
         except requests.exceptions.RequestException:
+            print(
+                f"Debug: error from get in _fetch_sessions_with_retry, {attempt = }"
+            )
             if attempt == max_attempts - 1:
                 flash(
                     "Database service is unavailable. Some functionality may be limited.",

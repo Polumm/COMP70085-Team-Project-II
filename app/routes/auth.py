@@ -115,18 +115,22 @@ def login():
                 )
                 if resp.status_code == 200:
                     user_data = resp.json()
+                    print("Debug: User found")
                 else:
                     # e.g. 404 => "User not found"
                     flash("User not found.", "danger")
+                    print("Debug: User not found")
                 # Break out of the for-loop if we got a valid response (200 or 404)
                 break
             except requests.exceptions.RequestException:
+                print(f"Debug: error from get in login, {attempt = }")
                 # If it's the last attempt, set service_error => True
                 if attempt == max_attempts - 1:
                     service_error = True
 
         # If both attempts failed with a RequestException:
         if service_error:
+            print("Debug: service_error")
             flash("Error contacting user service.", "danger")
             return render_template("login.html", form=form)
 
@@ -134,6 +138,7 @@ def login():
         # But we already flashed "User not found." or "Error contacting user service."
         # so just re-render the form:
         if not user_data:
+            print("Debug: user_data is None")
             return render_template("login.html", form=form)
 
         # Otherwise, check password:
