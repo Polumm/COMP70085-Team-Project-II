@@ -1,3 +1,4 @@
+import asyncio
 import requests
 import os
 import re  # Import regex module
@@ -19,6 +20,8 @@ from app.routes.auth import (
     login_required,
     generate_jwt,
 )  # Import from auth.py
+import httpx
+
 
 chatbot_bp = Blueprint("chatbot_bp", __name__)
 
@@ -178,7 +181,8 @@ def multisession_chat():
     username = g.username
 
     # Try to retrieve sessions twice if the first fails
-    session_ids = _fetch_sessions_with_retry(username, max_attempts=2)
+    # session_ids = _fetch_sessions_with_retry(username, max_attempts=2)
+    session_ids = asyncio.run(_fetch_sessions_concurrently(username))
 
     # Automatically select the first session if none is active
     session_id = request.args.get(
@@ -198,6 +202,30 @@ def multisession_chat():
         active_session_id=session_id,
         messages=messages,
     )
+
+
+async def _fetch_sessions_concurrently(
+    username, num_requests=5, max_attempts=2
+):
+    """
+    Sends `num_requests` concurrent requests to fetch session IDs for a user.
+    Returns the combined list of session IDs from all responses.
+    """
+    async with httpx.AsyncClient() as client:
+        tasks = [
+            client.get(
+                f"{DB_SERVICE_URL}/botchat/sessions/{username}", timeout=5
+            )
+            for _ in range(num_requests)
+        ]
+        responses = await asyncio.gather(*tasks, return_exceptions=True)
+        session_ids = []
+        for resp in responses:
+            if isinstance(resp, httpx.Response) and resp.status_code == 200:
+                session_ids.extend(resp.json().get("sessions", []))
+            else:
+                flash("Error retrieving sessions.", "error")
+        return sorted(set(session_ids))
 
 
 def _fetch_sessions_with_retry(username, max_attempts=2):
