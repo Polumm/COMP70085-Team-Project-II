@@ -2,21 +2,7 @@
 
 {% block content %}
 <div class="home-container text-center">
-    <!-- Show username if logged in -->
-    {% if user.is_authenticated %}
-        <h1 class="home-title">Welcome to MovieMe, {{ user.username }}! 🎬</h1>
-    {% else %}
-        <h1 class="home-title">Welcome to MovieMe!</h1>
-    {% endif %}
-
-    <!-- Show login/signup only if user is NOT logged in -->
-    {% if not user.is_authenticated %}
-        <div class="home-buttons">
-            <a href="{{ url_for('auth.login') }}" class="button login-btn">Login</a>
-            <a href="{{ url_for('auth.signup') }}" class="button signup-btn">Sign Up</a>
-            <a href="{{ url_for('auth.logout') }}" class="button logout-btn">Log Out</a>
-        </div>
-    {% endif %}
+    <h1 class="home-title">Welcome to MovieMe, {{ user.username }}! 🎬</h1>
 
     <!-- Movie Quote Section -->
     <div class="quote-container">

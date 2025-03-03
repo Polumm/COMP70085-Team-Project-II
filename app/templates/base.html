@@ -9,15 +9,14 @@
 </head>
 <body>
     <div class="content-wrapper">
+        <!-- ✅ Ensure top-navbar is inside a fixed positioned div -->
+        {% if request.endpoint != 'index' %}  
         <div class="top-navbar">
             {% if current_user.is_authenticated %}
-                <span class="welcome-text">Hi, {{ current_user.username }}!</span>
                 <a href="{{ url_for('auth.logout') }}" class="top-nav-link">Logout</a>
-            {% else %}
-                <a href="{{ url_for('auth.login') }}" class="top-nav-link">Login</a>
-                <a href="{{ url_for('auth.signup') }}" class="top-nav-link">Sign Up</a>
             {% endif %}
-        </div>
+        </div>        
+        {% endif %}
 
         <header class="header">
             <div class="header-content">
@@ -27,6 +26,7 @@
             </div>
         </header>
 
+        {% if request.endpoint != 'index' %}
         <nav class="navbar">
             <div class="nav-links">
                 <a href="{{ url_for('main.home') }}" class="nav-link">Home</a>
@@ -37,40 +37,13 @@
                 <a href="{{ url_for('main.saved') }}" class="nav-link">Saved</a>
             </div>
         </nav>
+        {% endif %}        
 
         <main class="main-content">
             {% block content %}
             {% endblock %}
         </main>
     </div>
-    <!-- Fetch & Display Movie Quote -->
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        fetch("/get-quote")  // Fetch from Flask backend
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("📡 API Response:", data);  // Debugging: Log API response
-
-                if (data.quote && data.movie_title) {
-                    document.getElementById("movie-quote").innerText = `"${data.quote}"`;
-                    document.getElementById("movie-source").innerText = `— ${data.movie_title}`;
-                } else {
-                    document.getElementById("movie-quote").innerText = "🎬 No movie quote available.";
-                    document.getElementById("movie-source").innerText = "";
-                }
-            })
-            .catch(error => {
-                console.error("🚨 Error fetching movie quote:", error);
-                document.getElementById("movie-quote").innerText = "⚠️ Failed to load quote.";
-                document.getElementById("movie-source").innerText = "";
-            });
-    });
-    </script>
 
 </body>
 </html>

@@ -8,21 +8,25 @@ main = Blueprint("main", __name__)
 
 
 @main.route("/")
+@login_required
 def landing_page():
-    return render_template("home.html", user=current_user)
+    return render_template("landingpage.html", user=current_user)
 
 
 @main.route("/home")
+@login_required
 def home():
     return render_template("home.html", user=current_user)
 
 
 @main.route("/profile")
+@login_required
 def profile():
     return render_template("profile.html")
 
 
 @main.route("/friends")
+@login_required
 def friends():
     return render_template("friends.html")
 
@@ -34,5 +38,6 @@ def chatbot():
 
 
 @main.route("/saved")
+@login_required
 def saved():
     return render_template("saved.html")
