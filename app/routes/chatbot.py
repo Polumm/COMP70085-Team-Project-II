@@ -1,4 +1,7 @@
+
 import asyncio
+import random
+import time
 import requests
 import os
 import re  # Import regex module
@@ -22,13 +25,10 @@ from app.routes.auth import (
 )  # Import from auth.py
 import httpx
 
-
 chatbot_bp = Blueprint("chatbot_bp", __name__)
-
 # URLs for the other microservices from environment variables
 DB_SERVICE_URL = os.getenv("DB_SERVICE_URL")  # Database microservice
 CHATBOT_URL = os.getenv("CHATBOT_URL")  # Chatbot microservice
-
 
 # ----------------------------------------------------
 # HOME / LANDING
@@ -42,7 +42,6 @@ def home():
         return redirect(url_for("chatbot_bp.multisession_chat"))
     return redirect(url_for("auth.login"))
 
-
 # ----------------------------------------------------
 # REGISTRATION
 # ----------------------------------------------------
@@ -55,15 +54,12 @@ def register():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
         confirm_password = request.form.get("confirm_password", "").strip()
-
         if not username or not password or not confirm_password:
             flash("All fields are required.", "error")
             return redirect(url_for("chatbot_bp.register"))
-
         if password != confirm_password:
             flash("Passwords do not match.", "error")
             return redirect(url_for("chatbot_bp.register"))
-
         try:
             resp = requests.post(
                 f"{DB_SERVICE_URL}/users",
@@ -80,9 +76,7 @@ def register():
                 flash(err_data.get("error", "Registration failed."), "error")
         except requests.exceptions.RequestException:
             flash("Error contacting user service.", "error")
-
     return render_template("register.html")
-
 
 # ----------------------------------------------------
 # LOGIN
@@ -99,7 +93,6 @@ def login():
         if not username or not password:
             flash("Username and password required.")
             return redirect(url_for("chatbot_bp.login"))
-
         try:
             resp = requests.get(
                 f"{DB_SERVICE_URL}/users/{username}", timeout=5
@@ -118,9 +111,7 @@ def login():
                 flash("User not found.")
         except requests.exceptions.RequestException:
             flash("Error contacting user service.")
-
     return render_template("login.html")
-
 
 # ----------------------------------------------------
 # LOGOUT
@@ -148,12 +139,10 @@ def logout():
                     "DB service is unavailable; could not sync sessions.",
                     "warning",
                 )
-
     # Then remove the JWT from the session to log out
     session.pop("token", None)
     flash("Logged out.")
     return redirect(url_for("chatbot_bp.login"))
-
 
 # ----------------------------------------------------
 # CHAT MANAGEMENT
@@ -169,33 +158,28 @@ def sync_session(session_id):
         flash(f"Session '{session_id}' synced to Postgres!", "success")
     except requests.exceptions.RequestException:
         flash("Failed to sync session; DB service unavailable.", "error")
-
     return redirect(
         url_for("chatbot_bp.multisession_chat", session_id=session_id)
     )
-
 
 @chatbot_bp.route("/botchat", methods=["GET"])
 @login_required
 def multisession_chat():
     username = g.username
-
-    # Try to retrieve sessions twice if the first fails
-    # session_ids = _fetch_sessions_with_retry(username, max_attempts=2)
-    session_ids = asyncio.run(_fetch_sessions_concurrently(username))
-
+    # Fetch sessions synchronously using asyncio.run()
+    session_ids = asyncio.run(
+        _fetch_sessions_concurrently(username, max_attempts=5)
+    )
     # Automatically select the first session if none is active
     session_id = request.args.get(
         "session_id", session_ids[0] if session_ids else None
     )
-
     # Retrieve messages for the active session
     messages = []
     if session_id:
         messages = _fetch_messages_with_retry(
-            username, session_id, max_attempts=2
+            username, session_id, max_attempts=5
         )
-
     return render_template(
         "bot_multisession.html",
         session_ids=session_ids,
@@ -203,30 +187,42 @@ def multisession_chat():
         messages=messages,
     )
 
-
 async def _fetch_sessions_concurrently(
-    username, num_requests=5, max_attempts=2
+    username, num_requests=5, max_attempts=5
 ):
     """
     Sends `num_requests` concurrent requests to fetch session IDs for a user.
-    Returns the combined list of session IDs from all responses.
+    Implements retry logic with exponential backoff.
     """
     async with httpx.AsyncClient() as client:
-        tasks = [
-            client.get(
-                f"{DB_SERVICE_URL}/botchat/sessions/{username}", timeout=5
-            )
-            for _ in range(num_requests)
-        ]
-        responses = await asyncio.gather(*tasks, return_exceptions=True)
-        session_ids = []
-        for resp in responses:
-            if isinstance(resp, httpx.Response) and resp.status_code == 200:
-                session_ids.extend(resp.json().get("sessions", []))
-            else:
-                flash("Error retrieving sessions.", "error")
-        return sorted(set(session_ids))
-
+        for attempt in range(max_attempts):
+            tasks = [
+                client.get(
+                    f"{DB_SERVICE_URL}/botchat/sessions/{username}", timeout=5
+                )
+                for _ in range(num_requests)
+            ]
+            responses = await asyncio.gather(*tasks, return_exceptions=True)
+            session_ids = []
+            for resp in responses:
+                if (
+                    isinstance(resp, httpx.Response)
+                    and resp.status_code == 200
+                ):
+                    session_ids.extend(resp.json().get("sessions", []))
+                else:
+                    print(f"Attempt {attempt + 1}: Error retrieving sessions.")
+            if session_ids:
+                return sorted(set(session_ids))  # Return successful result
+            # Exponential backoff before retrying
+            wait_time = 2**attempt + random.uniform(0, 1)
+            print(f"Retrying session fetch in {wait_time:.2f} seconds...")
+            await asyncio.sleep(wait_time)
+    flash(
+        "Database service is unavailable. Some functionality may be limited.",
+        "warning",
+    )
+    return []
 
 def _fetch_sessions_with_retry(username, max_attempts=2):
     """
@@ -256,11 +252,10 @@ def _fetch_sessions_with_retry(username, max_attempts=2):
                 )
     return []
 
-
-def _fetch_messages_with_retry(username, session_id, max_attempts=2):
+def _fetch_messages_with_retry(username, session_id, max_attempts=5):
     """
     Tries to get the messages from the DB microservice up to `max_attempts` times.
-    Returns a list of messages (or empty list on failure).
+    Uses exponential backoff on failures.
     """
     for attempt in range(max_attempts):
         try:
@@ -271,15 +266,15 @@ def _fetch_messages_with_retry(username, session_id, max_attempts=2):
             if resp.status_code == 200:
                 return resp.json().get("messages", [])
             else:
-                flash("Error retrieving messages.", "error")
+                print(f"Attempt {attempt + 1}: Error retrieving messages.")
         except requests.exceptions.RequestException:
-            if attempt == max_attempts - 1:
-                flash(
-                    "Database service is unavailable. Messages may not load.",
-                    "warning",
-                )
+            print(f"Request attempt {attempt + 1} failed.")
+        # Exponential backoff
+        wait_time = 2**attempt + random.uniform(0, 1)
+        print(f"Retrying message fetch in {wait_time:.2f} seconds...")
+        time.sleep(wait_time)
+    flash("Database service is unavailable. Messages may not load.", "warning")
     return []
-
 
 @chatbot_bp.route("/botchat/new_session", methods=["POST"])
 @login_required
@@ -289,11 +284,9 @@ def new_session():
     """
     session_name = request.form["session_name"].strip()
     username = g.username
-
     if not session_name:
         flash("Session name cannot be empty.", "error")
         return redirect(url_for("chatbot_bp.multisession_chat"))
-
     # Validate session name (only letters, numbers, spaces, dashes, and underscores)
     if not re.match(r"^[a-zA-Z0-9 _-]+$", session_name):
         flash(
@@ -301,7 +294,6 @@ def new_session():
             "error",
         )
         return redirect(url_for("chatbot_bp.multisession_chat"))
-
     # Check if session name already exists for this user (case-insensitive)
     try:
         existing_sessions_resp = requests.get(
@@ -312,21 +304,18 @@ def new_session():
                 "sessions", []
             )
             existing_sessions_lower = {s.lower() for s in existing_sessions}
-
             if session_name.lower() in existing_sessions_lower:
                 flash(
                     "A session with this name already exists. Please choose a different name.",
                     "error",
                 )
                 return redirect(url_for("chatbot_bp.multisession_chat"))
-
     except requests.exceptions.RequestException:
         flash(
             "Database service is unavailable. Cannot check for duplicate session names.",
             "warning",
         )
         return redirect(url_for("chatbot_bp.multisession_chat"))
-
     # If valid and unique, proceed with creating a new session
     try:
         resp = requests.post(
@@ -340,17 +329,14 @@ def new_session():
             err_data = resp.json()
             flash(err_data.get("error", "Failed to create session."), "error")
             return redirect(url_for("chatbot_bp.multisession_chat"))
-
     except requests.exceptions.RequestException:
         flash(
             "Database service is unavailable. Session creation failed.",
             "warning",
         )
-
     return redirect(
         url_for("chatbot_bp.multisession_chat", session_id=session_name)
     )
-
 
 @chatbot_bp.route("/botchat/select/<session_id>")
 @login_required
@@ -362,7 +348,6 @@ def select_session(session_id):
         url_for("chatbot_bp.multisession_chat", session_id=session_id)
     )
 
-
 @chatbot_bp.route("/botchat/send", methods=["POST"])
 @login_required
 def send_to_session():
@@ -373,20 +358,16 @@ def send_to_session():
     username = g.username
     session_id = request.form.get("session_id", "").strip()
     user_message = request.form.get("message", "").strip()
-
     if not session_id:
         flash("No session specified.", "error")
         return redirect(url_for("chatbot_bp.multisession_chat"))
-
     if not user_message:
         flash("Message cannot be empty.", "error")
         return redirect(
             url_for("chatbot_bp.multisession_chat", session_id=session_id)
         )
-
     # Generate timestamp
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     # 1) Store user's message in DB microservice
     try:
         user_store_resp = requests.post(
@@ -413,7 +394,6 @@ def send_to_session():
         return redirect(
             url_for("chatbot_bp.multisession_chat", session_id=session_id)
         )
-
     # 2) Call Chatbot microservice for a reply
     try:
         bot_resp = requests.post(
@@ -434,7 +414,6 @@ def send_to_session():
         bot_text = json.dumps(
             {"response_type": "text", "response": "Error contacting chatbot."}
         )
-
     # 3) Store the bot's response in DB microservice
     try:
         bot_store_resp = requests.post(
@@ -458,11 +437,9 @@ def send_to_session():
             )
     except requests.exceptions.RequestException:
         flash("Error contacting DB service to store bot response.", "error")
-
     return redirect(
         url_for("chatbot_bp.multisession_chat", session_id=session_id)
     )
-
 
 @chatbot_bp.route("/botchat/delete/<session_id>", methods=["GET"])
 @login_required
@@ -488,10 +465,8 @@ def delete_session(session_id):
             )
     except requests.exceptions.RequestException:
         flash("Error contacting DB service.", "error")
-
     # 3) Redirect back to the main chat page
     return redirect(url_for("chatbot_bp.multisession_chat"))
-
 
 @chatbot_bp.route("/botchat/search", methods=["GET"])
 @login_required
@@ -504,7 +479,6 @@ def search_messages():
     if not query:
         flash("No query provided.", "error")
         return redirect(url_for("chatbot_bp.multisession_chat"))
-
     username = g.username
     try:
         response = requests.get(
@@ -524,5 +498,4 @@ def search_messages():
             "Database service is unavailable. Search functionality may be limited.",
             "warning",
         )
-
     return render_template("bot_search.html", results=[], query=query)
