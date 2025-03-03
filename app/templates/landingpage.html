@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="landing-container text-center">
+    <h1 class="landing-title">Welcome to MovieMe!</h1>
+    <p class="landing-subtitle">Discover, explore, and find your next favorite movie.</p>
+
+    <div class="landing-buttons">
+        <a href="{{ url_for('auth.login') }}" class="button login-btn">Login</a>
+        <a href="{{ url_for('auth.signup') }}" class="button signup-btn">Sign Up</a>
+    </div>
+</div>
+{% endblock %}

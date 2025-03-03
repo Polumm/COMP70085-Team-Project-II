@@ -145,6 +145,7 @@ def login():
         if check_password_hash(user_data["password_hash"], password):
             token = generate_jwt(username)
             session["token"] = token
+            session["user_id"] = user_data["id"]  # ✅ Store user_id in session
             flash("Login successful!", "success")
             return redirect(next_page or url_for("main.home"))
         else:
@@ -162,6 +163,7 @@ def logout():
     username = g.username
     sync_user_sessions(username)  # Sync all sessions before logout
     session.pop("token", None)
+    session.pop("user_id", None)  # ✅ Remove user_id from session
     flash("Logged out successfully.", "success")
     return redirect(url_for("main.home"))
 
