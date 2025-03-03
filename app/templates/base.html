@@ -8,15 +8,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="content-wrapper">
-        <!-- ✅ Ensure top-navbar is inside a fixed positioned div -->
-        {% if request.endpoint != 'index' %}  
-        <div class="top-navbar">
-            {% if current_user.is_authenticated %}
+    <div class="top-navbar">
+        {% if session.get('token') %}
+                <span class="welcome-text">Hi, {{ session.get('username') }}!</span>
                 <a href="{{ url_for('auth.logout') }}" class="top-nav-link">Logout</a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="top-nav-link">Login</a>
+                <a href="{{ url_for('auth.signup') }}" class="top-nav-link">Sign Up</a>
             {% endif %}
-        </div>        
-        {% endif %}
+        </div>
 
         <header class="header">
             <div class="header-content">

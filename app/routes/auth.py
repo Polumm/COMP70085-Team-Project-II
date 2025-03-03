@@ -146,6 +146,7 @@ def login():
             token = generate_jwt(username)
             session["token"] = token
             session["user_id"] = user_data["id"]  # ✅ Store user_id in session
+            session["username"] = username # Store username in session
             flash("Login successful!", "success")
             return redirect(next_page or url_for("main.home"))
         else:

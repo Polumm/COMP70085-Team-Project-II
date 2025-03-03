@@ -2,7 +2,11 @@
 
 {% block content %}
 <div class="home-container text-center">
-    <h1 class="home-title">Welcome to MovieMe, {{ user.username }}! 🎬</h1>
+    {% if session.get('username') %}
+        <h1 class="home-title">Welcome to MovieMe, {{ session.get('username') }}! 🎬</h1>
+    {% else %}
+        <h1 class="home-title">Welcome to MovieMe! 🎬</h1>
+    {% endif %}
 
     <!-- Movie Quote Section -->
     <div class="quote-container">
