@@ -22,3 +22,4 @@ email-validator==2.1.0
 flask_bcrypt
 PyJWT
 psycopg2
+httpx==0.28.1
