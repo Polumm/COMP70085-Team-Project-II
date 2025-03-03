@@ -1,3 +1,6 @@
+import asyncio
+import random
+import threading
 from flask import (
     Blueprint,
     render_template,
@@ -10,6 +13,7 @@ from flask import (
     request,
     jsonify,
 )
+import httpx
 from app.forms import LoginForm, SignupForm
 from functools import wraps
 import requests
@@ -146,13 +150,47 @@ def login():
             token = generate_jwt(username)
             session["token"] = token
             session["user_id"] = user_data["id"]  # ✅ Store user_id in session
-            session["username"] = username # Store username in session
+            session["username"] = username  # Store username in session
             flash("Login successful!", "success")
+            # ✅ Run warm-up asynchronously in a separate thread
+            threading.Thread(target=lambda: asyncio.run(warm_up_session_requests(username))).start()
+
             return redirect(next_page or url_for("main.home"))
         else:
             flash("Invalid credentials.", "danger")
 
     return render_template("login.html", form=form)
+
+
+# ----------------------------------------------------
+# Async Warm-Up Function with Retry
+# ----------------------------------------------------
+async def warm_up_session_requests(username, max_attempts=5, base_wait=2):
+    """
+    Sends async requests to prefetch session data for the user.
+    Implements retry logic with exponential backoff.
+    """
+    warmup_url = f"{DB_SERVICE_URL}/botchat/sessions/{username}"
+
+    async with httpx.AsyncClient() as client:
+        for attempt in range(max_attempts):
+            try:
+                resp = await client.get(warmup_url, timeout=5)
+                if resp.status_code == 200:
+                    print(f"Warm-up successful for {warmup_url} on attempt {attempt + 1}")
+                    return  # Success, no need to retry
+                else:
+                    print(f"Warm-up failed with status {resp.status_code} on attempt {attempt + 1}")
+
+            except httpx.RequestError as e:
+                print(f"Warm-up request failed due to {str(e)} on attempt {attempt + 1}")
+
+            # Exponential backoff with random jitter
+            wait_time = base_wait * (2 ** attempt) + random.uniform(0, 1)
+            print(f"Retrying warm-up request in {wait_time:.2f} seconds...")
+            await asyncio.sleep(wait_time)
+
+    print(f"Final failure: Warm-up request for {username} could not be completed after {max_attempts} attempts.")
 
 
 # ----------------------------------------------------
