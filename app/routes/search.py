@@ -1,12 +1,21 @@
-from flask import Blueprint, render_template, request, current_app
+from flask import Blueprint, render_template, request, current_app, session
 import requests
+import os
 
 search = Blueprint("search", __name__)
+
+DB_SERVICE_RL = os.getenv("DB_SERVICE_URL")
 
 @search.route("/", methods=["GET", "POST"])
 def movie_search():
     TMDB_API_KEY = current_app.config["TMDB_API_KEY"]
     BASE_URL = "https://api.themoviedb.org/3"
+
+    # ✅ Get logged-in user ID from session
+    user_id = session.get("user_id")  # Ensure session contains user_id
+
+    if not user_id:
+        return redirect(url_for("auth.login"))  # Redirect if not logged in
 
     # Get genres list from TMDB
     genres_response = requests.get(
@@ -91,7 +100,8 @@ def movie_search():
                 selected_filters=selected_filters,
                 current_page=current_page,
                 total_pages=total_pages,
-                movies=[]
+                movies=[],
+                user_id=user_id
             )
 
     return render_template(
@@ -101,5 +111,6 @@ def movie_search():
         languages=languages,
         selected_filters=selected_filters,
         current_page=current_page,
-        total_pages=total_pages
+        total_pages=total_pages,
+        user_id=user_id
     )
