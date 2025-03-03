@@ -112,9 +112,27 @@
                     {% if movie.overview %}
                     <p class="movie-description">{{ movie.overview }}</p>
                     {% endif %}
+
+                    <!-- ✅ Save Movie Button -->
+                    <button class="save-movie-btn" 
+                            data-movie-id="{{ movie.id }}"
+                            data-title="{{ movie.title }}"
+                            data-poster="{{ movie.poster_path }}"
+                            data-release-date="{{ movie.release_date }}"
+                            data-vote-average="{{ movie.vote_average }}"
+                            data-vote-count="{{ movie.vote_count }}"
+                            data-overview="{{ movie.overview }}">
+                        Save Movie
+                    </button>
+
+                    <!-- Success Message -->
+                    <p class="save-message" id="save-msg-{{ movie.id }}" style="display: none; color: green;">
+                        Movie Saved!
+                    </p>
                 </div>
             </div>
             {% endfor %}
+
 
             <!-- Pagination -->
             {% if total_pages > 1 %}
@@ -161,3 +179,67 @@ document.getElementById("sort_by").addEventListener("change", function() {
     });
 });
 </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const buttons = document.querySelectorAll(".save-movie-btn");
+    
+        buttons.forEach(button => {
+            button.addEventListener("click", function() {
+                const movieId = this.getAttribute("data-movie-id");
+                const title = this.getAttribute("data-title");
+                const posterPath = this.getAttribute("data-poster");
+                const releaseDate = this.getAttribute("data-release-date");
+                const voteAverage = this.getAttribute("data-vote-average");
+                const voteCount = this.getAttribute("data-vote-count");
+                const overview = this.getAttribute("data-overview");
+    
+                // ✅ Fetch user ID passed from Flask session
+                const userId = "{{ user_id }}";
+                if (!userId) {
+                    alert("You must be logged in to save movies!");
+                    return;
+                }
+    
+                // ✅ Use DB service URL passed from Flask
+                const dbServiceUrl = "{{ db_service_url }}";
+                if (!dbServiceUrl) {
+                    alert("DB service URL is missing!");
+                    return;
+                }
+    
+                fetch(`${dbServiceUrl}/movies/save`, {  
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        movie_id: movieId,
+                        title: title,
+                        poster_path: posterPath,
+                        release_date: releaseDate,
+                        vote_average: voteAverage,
+                        vote_count: voteCount,
+                        overview: overview
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message === "Movie saved successfully") {
+                        document.getElementById(`save-msg-${movieId}`).style.display = "block";
+                        this.disabled = true;
+                        this.innerText = "Saved";
+                    } else if (data.message === "Movie already saved") {
+                        alert("You have already saved this movie.");
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error saving movie:", error);
+                    alert("Something went wrong. Please try again.");
+                });
+            });
+        });
+    });
+    </script>
+    
