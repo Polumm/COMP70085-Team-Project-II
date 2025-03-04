@@ -43,9 +43,11 @@ def decode_jwt(token):
     try:
         secret_key = current_app.config["SECRET_KEY"]
         return jwt.decode(token, secret_key, algorithms=["HS256"])
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-        return None
-
+    except jwt.ExpiredSignatureError:
+        return {"error": "Token expired"}
+    except jwt.InvalidTokenError:
+        return {"error": "Invalid token"}
+    
 
 def sync_user_sessions(username):
     """

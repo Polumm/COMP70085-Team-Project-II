@@ -363,23 +363,27 @@ def select_session(session_id):
 @login_required
 def send_to_session():
     """
-    Send a user message to the chatbot, store it in DB microservice,
-    then store the bot's response in DB microservice as well.
+    Send a user message to the chatbot-service, store it in DB microservice,
+    then store the bot's response in DB microservice.
     """
     username = g.username
     session_id = request.form.get("session_id", "").strip()
     user_message = request.form.get("message", "").strip()
+
     if not session_id:
         flash("No session specified.", "error")
         return redirect(url_for("chatbot_bp.multisession_chat"))
+
     if not user_message:
         flash("Message cannot be empty.", "error")
-        return redirect(
-            url_for("chatbot_bp.multisession_chat", session_id=session_id)
-        )
-    # Generate timestamp
+        return redirect(url_for("chatbot_bp.multisession_chat", session_id=session_id))
+
+    # ✅ Get JWT token from the session and send it in the headers
+    token = session.get("token")
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+
+    # 1️⃣ Store user message in DB
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    # 1) Store user's message in DB microservice
     try:
         user_store_resp = requests.post(
             f"{DB_SERVICE_URL}/botchat/messages",
@@ -392,40 +396,28 @@ def send_to_session():
             },
             timeout=5,
         )
-        if user_store_resp.status_code not in [200, 201]:
-            err_data = user_store_resp.json()
-            flash(
-                err_data.get("error", "Failed to store your message."), "error"
-            )
-            return redirect(
-                url_for("chatbot_bp.multisession_chat", session_id=session_id)
-            )
+        user_store_resp.raise_for_status()
     except requests.exceptions.RequestException:
         flash("Error contacting DB service for user message.", "error")
-        return redirect(
-            url_for("chatbot_bp.multisession_chat", session_id=session_id)
-        )
-    # 2) Call Chatbot microservice for a reply
+        return redirect(url_for("chatbot_bp.multisession_chat", session_id=session_id))
+
+    # 2️⃣ Call chatbot-service for a reply (now sending JWT in headers)
     try:
         bot_resp = requests.post(
             f"{CHATBOT_URL}/chat",
             json={"session_id": session_id, "message": user_message},
+            headers=headers,  # ✅ Pass token to chatbot-service
             timeout=5,
         )
         if bot_resp.status_code == 200:
             bot_json = bot_resp.json()
-            bot_text = json.dumps(
-                bot_json
-            )  # Store the entire JSON response as a string
+            bot_text = json.dumps(bot_json)  # Store the entire JSON response as a string
         else:
-            bot_text = json.dumps(
-                {"response_type": "text", "response": "Bot did not respond."}
-            )
+            bot_text = json.dumps({"response_type": "text", "response": "Bot did not respond."})
     except requests.exceptions.RequestException:
-        bot_text = json.dumps(
-            {"response_type": "text", "response": "Error contacting chatbot."}
-        )
-    # 3) Store the bot's response in DB microservice
+        bot_text = json.dumps({"response_type": "text", "response": "Error contacting chatbot."})
+
+    # 3️⃣ Store bot's response in DB
     try:
         bot_store_resp = requests.post(
             f"{DB_SERVICE_URL}/botchat/messages",
@@ -434,23 +426,15 @@ def send_to_session():
                 "sender": "bot",
                 "session_id": session_id,
                 "message": bot_text,
-                "time": (datetime.now() + timedelta(seconds=1)).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
+                "time": (datetime.now() + timedelta(seconds=1)).strftime("%Y-%m-%d %H:%M:%S"),
             },
             timeout=5,
         )
-        if bot_store_resp.status_code not in [200, 201]:
-            err_data = bot_store_resp.json()
-            flash(
-                err_data.get("error", "Failed to store bot's message."),
-                "error",
-            )
+        bot_store_resp.raise_for_status()
     except requests.exceptions.RequestException:
         flash("Error contacting DB service to store bot response.", "error")
-    return redirect(
-        url_for("chatbot_bp.multisession_chat", session_id=session_id)
-    )
+
+    return redirect(url_for("chatbot_bp.multisession_chat", session_id=session_id))
 
 
 @chatbot_bp.route("/botchat/delete/<session_id>", methods=["GET"])
