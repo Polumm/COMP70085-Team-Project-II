@@ -73,7 +73,7 @@ jobs:
               --ports 5000 \
               --environment-variables \
                 DB_SERVICE_URL="${{ secrets.DB_SERVICE_URL }}" \
-                CHATBOT_URL="${{ secrets.CHATBOT_URL }}"
+                CHATBOT_URL="${{ secrets.CHATBOT_URL }}" \
                 TMDB_API_KEY="${{ secrets.TMDB_API_KEY }}"
 
             # rather than below (below is the old way)

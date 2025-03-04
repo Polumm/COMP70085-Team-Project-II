@@ -32,6 +32,11 @@ spec:
                 secretKeyRef:
                   name: chatbot-secrets
                   key: DB_SERVICE_URL
+            - name: TMDB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: chatbot-secrets
+                  key: TMDB_API_KEY
           resources:
             requests:
               cpu: "500m"
