@@ -8,4 +8,5 @@ services:
       - FLASK_ENV=deployment
       - CHATBOT_URL: ${{ secrets.CHATBOT_URL }}
       - DB_SERVICE_URL: ${{ secrets.DB_SERVICE_URL }}
+      - TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
     restart: always
