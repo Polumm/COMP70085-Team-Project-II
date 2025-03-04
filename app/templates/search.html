@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <script>
+        const userId = "{{ user_id }}";
+        const dbServiceUrl = "{{ db_service_url }}";
+    </script>
 <div class="search-container">
     <h2 class="search-title">Find Your Favorite Movies</h2>
     <form id="searchForm" method="POST" action="{{ url_for('search.movie_search') }}">
@@ -159,7 +163,6 @@
         {% endif %}
     </div>
 </div>
-{% endblock %}
 
 <script>
 document.getElementById("sort_by").addEventListener("change", function() {
@@ -181,65 +184,97 @@ document.getElementById("sort_by").addEventListener("change", function() {
 </script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const buttons = document.querySelectorAll(".save-movie-btn");
-    
-        buttons.forEach(button => {
-            button.addEventListener("click", function() {
-                const movieId = this.getAttribute("data-movie-id");
-                const title = this.getAttribute("data-title");
-                const posterPath = this.getAttribute("data-poster");
-                const releaseDate = this.getAttribute("data-release-date");
-                const voteAverage = this.getAttribute("data-vote-average");
-                const voteCount = this.getAttribute("data-vote-count");
-                const overview = this.getAttribute("data-overview");
-    
-                // ✅ Fetch user ID passed from Flask session
-                const userId = "{{ user_id }}";
-                if (!userId) {
-                    alert("You must be logged in to save movies!");
-                    return;
-                }
-    
-                // ✅ Use DB service URL passed from Flask
-                const dbServiceUrl = "{{ db_service_url }}";
-                if (!dbServiceUrl) {
-                    alert("DB service URL is missing!");
-                    return;
-                }
-    
-                fetch(`${dbServiceUrl}/movies/save`, {  
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        movie_id: movieId,
-                        title: title,
-                        poster_path: posterPath,
-                        release_date: releaseDate,
-                        vote_average: voteAverage,
-                        vote_count: voteCount,
-                        overview: overview
-                    })
+document.addEventListener("DOMContentLoaded", function() {
+    const saveButtons = document.querySelectorAll(".save-movie-btn");
+
+    saveButtons.forEach(button => {
+        button.addEventListener("click", function() {
+            const movieId = this.getAttribute("data-movie-id");
+            const title = this.getAttribute("data-title");
+            const posterPath = this.getAttribute("data-poster");
+            const releaseDate = this.getAttribute("data-release-date");
+            const voteAverage = this.getAttribute("data-vote-average");
+            const voteCount = this.getAttribute("data-vote-count");
+            const overview = this.getAttribute("data-overview");
+
+            // Get user ID from session
+            const userId = "{{ session.get('user_id') }}";
+            if (!userId) {
+                alert("You must be logged in to save movies!");
+                return;
+            }
+
+            // First try to get the URL from the template
+            let dbServiceUrl = "{{ DB_SERVICE_URL }}";
+
+            console.log("User ID:", userId);
+            console.log("DB Service URL from template:", dbServiceUrl);
+
+            // If it's empty, fall back to our known working URL
+            if (!dbServiceUrl) {
+                dbServiceUrl = "http://chatbot-database.uksouth.azurecontainer.io:6003";
+                console.log("Using fallback DB URL:", dbServiceUrl);
+            }
+
+            // Ensure the DB service URL has the http:// prefix
+            if (dbServiceUrl && !dbServiceUrl.startsWith('http')) {
+                dbServiceUrl = 'http://' + dbServiceUrl;
+                console.log("Added http:// prefix, now using:", dbServiceUrl);
+            }
+
+            console.log("Final DB Service URL:", dbServiceUrl);
+
+            console.log("Saving movie...");
+            console.log("Movie ID:", movieId);
+            console.log("User ID:", userId);
+
+            // Send request to save movie
+            fetch(`${dbServiceUrl}/movies/save`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    movie_id: movieId,
+                    title: title,
+                    poster_path: posterPath,
+                    release_date: releaseDate,
+                    vote_average: voteAverage,
+                    vote_count: voteCount,
+                    overview: overview
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message === "Movie saved successfully") {
-                        document.getElementById(`save-msg-${movieId}`).style.display = "block";
-                        this.disabled = true;
-                        this.innerText = "Saved";
-                    } else if (data.message === "Movie already saved") {
-                        alert("You have already saved this movie.");
-                    } else {
-                        alert("Error: " + data.error);
+            })
+            .then(response => {
+                console.log("Response status:", response.status);
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error("Failed to parse JSON:", text);
+                        throw new Error(`Invalid JSON: ${text.substring(0, 100)}...`);
                     }
-                })
-                .catch(error => {
-                    console.error("Error saving movie:", error);
-                    alert("Something went wrong. Please try again.");
                 });
+            })
+            .then(data => {
+                console.log("Response data:", data);
+                if (data.message === "Movie saved successfully") {
+                    alert("Movie saved to your profile!");
+                    // Disable button
+                    this.disabled = true;
+                    this.textContent = "Saved";
+                } else if (data.message === "Movie already saved") {
+                    alert("You've already saved this movie.");
+                } else {
+                    alert("Error: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(error => {
+                console.error("Error saving movie:", error);
+                alert("Failed to save movie. Please try again.");
             });
         });
     });
-    </script>
-    
+});
+</script>
+{% endblock %}

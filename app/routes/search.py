@@ -4,7 +4,7 @@ import os
 
 search = Blueprint("search", __name__)
 
-DB_SERVICE_RL = os.getenv("DB_SERVICE_URL")
+DB_SERVICE_URL = os.getenv("DB_SERVICE_URL")
 
 @search.route("/", methods=["GET", "POST"])
 def movie_search():
@@ -112,5 +112,6 @@ def movie_search():
         selected_filters=selected_filters,
         current_page=current_page,
         total_pages=total_pages,
-        user_id=user_id
+        user_id=user_id,
+        DB_SERVICE_URL=DB_SERVICE_URL
     )

@@ -37,7 +37,3 @@ def chatbot():
     return multisession_chat()
 
 
-@main.route("/saved")
-@login_required
-def saved():
-    return render_template("saved.html")
