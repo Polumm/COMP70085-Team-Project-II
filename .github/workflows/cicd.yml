@@ -13,6 +13,7 @@ env:
   GHCR_USER: ${{ github.repository_owner }}
   CHATBOT_URL: ${{ secrets.CHATBOT_URL }}
   DB_SERVICE_URL: ${{ secrets.DB_SERVICE_URL }}
+  TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
 
 jobs:
   build-and-push-api:
@@ -72,6 +73,7 @@ jobs:
               --environment-variables \
                 DB_SERVICE_URL="${{ secrets.DB_SERVICE_URL }}" \
                 CHATBOT_URL="${{ secrets.CHATBOT_URL }}"
+                TMDB_API_KEY="${{ secrets.TMDB_API_KEY }}"
 
             # rather than below (below is the old way)
             # echo "🔹 Running new container..."
