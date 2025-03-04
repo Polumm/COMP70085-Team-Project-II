@@ -3,8 +3,9 @@ kind: Ingress
 metadata:
   name: movie-me-ingress
 spec:
+  ingressClassName: nginx  # <-- Ensure this is added
   rules:
-    - host: movie-me.chatbot.com
+    - host: movie-me.uksouth.cloudapp.azure.com
       http:
         paths:
           - path: /

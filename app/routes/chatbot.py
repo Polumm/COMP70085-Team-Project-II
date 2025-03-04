@@ -1,4 +1,3 @@
-
 import asyncio
 import random
 import time
@@ -30,6 +29,7 @@ chatbot_bp = Blueprint("chatbot_bp", __name__)
 DB_SERVICE_URL = os.getenv("DB_SERVICE_URL")  # Database microservice
 CHATBOT_URL = os.getenv("CHATBOT_URL")  # Chatbot microservice
 
+
 # ----------------------------------------------------
 # HOME / LANDING
 # ----------------------------------------------------
@@ -41,6 +41,7 @@ def home():
     if session.get("token"):
         return redirect(url_for("chatbot_bp.multisession_chat"))
     return redirect(url_for("auth.login"))
+
 
 # ----------------------------------------------------
 # REGISTRATION
@@ -78,6 +79,7 @@ def register():
             flash("Error contacting user service.", "error")
     return render_template("register.html")
 
+
 # ----------------------------------------------------
 # LOGIN
 # ----------------------------------------------------
@@ -113,6 +115,7 @@ def login():
             flash("Error contacting user service.")
     return render_template("login.html")
 
+
 # ----------------------------------------------------
 # LOGOUT
 # ----------------------------------------------------
@@ -144,6 +147,7 @@ def logout():
     flash("Logged out.")
     return redirect(url_for("chatbot_bp.login"))
 
+
 # ----------------------------------------------------
 # CHAT MANAGEMENT
 # ----------------------------------------------------
@@ -161,6 +165,7 @@ def sync_session(session_id):
     return redirect(
         url_for("chatbot_bp.multisession_chat", session_id=session_id)
     )
+
 
 @chatbot_bp.route("/botchat", methods=["GET"])
 @login_required
@@ -187,8 +192,9 @@ def multisession_chat():
         messages=messages,
     )
 
+
 async def _fetch_sessions_concurrently(
-    username, num_requests=5, max_attempts=5
+    username, num_requests=2, max_attempts=5
 ):
     """
     Sends `num_requests` concurrent requests to fetch session IDs for a user.
@@ -224,6 +230,7 @@ async def _fetch_sessions_concurrently(
     )
     return []
 
+
 def _fetch_sessions_with_retry(username, max_attempts=2):
     """
     Tries to get the session list from the DB microservice up to `max_attempts` times.
@@ -252,6 +259,7 @@ def _fetch_sessions_with_retry(username, max_attempts=2):
                 )
     return []
 
+
 def _fetch_messages_with_retry(username, session_id, max_attempts=5):
     """
     Tries to get the messages from the DB microservice up to `max_attempts` times.
@@ -275,6 +283,7 @@ def _fetch_messages_with_retry(username, session_id, max_attempts=5):
         time.sleep(wait_time)
     flash("Database service is unavailable. Messages may not load.", "warning")
     return []
+
 
 @chatbot_bp.route("/botchat/new_session", methods=["POST"])
 @login_required
@@ -338,6 +347,7 @@ def new_session():
         url_for("chatbot_bp.multisession_chat", session_id=session_name)
     )
 
+
 @chatbot_bp.route("/botchat/select/<session_id>")
 @login_required
 def select_session(session_id):
@@ -347,6 +357,7 @@ def select_session(session_id):
     return redirect(
         url_for("chatbot_bp.multisession_chat", session_id=session_id)
     )
+
 
 @chatbot_bp.route("/botchat/send", methods=["POST"])
 @login_required
@@ -441,6 +452,7 @@ def send_to_session():
         url_for("chatbot_bp.multisession_chat", session_id=session_id)
     )
 
+
 @chatbot_bp.route("/botchat/delete/<session_id>", methods=["GET"])
 @login_required
 def delete_session(session_id):
@@ -467,6 +479,7 @@ def delete_session(session_id):
         flash("Error contacting DB service.", "error")
     # 3) Redirect back to the main chat page
     return redirect(url_for("chatbot_bp.multisession_chat"))
+
 
 @chatbot_bp.route("/botchat/search", methods=["GET"])
 @login_required
