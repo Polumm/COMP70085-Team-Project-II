@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, current_app, flash, request
+from flask import Blueprint, render_template, session, current_app, flash
 import requests
 import os
 from app.routes.auth import login_required
@@ -14,7 +14,6 @@ def user_profile():
 
     # Use the environment variable directly
     DB_SERVICE_URL = os.getenv("DB_SERVICE_URL")
-    print(f"DEBUG: DB_SERVICE_URL = {DB_SERVICE_URL}")  # Debug line to check value
 
     # Fetch saved movies from the database service
     saved_movies = []
@@ -35,5 +34,5 @@ def user_profile():
         "profile.html",
         saved_movies=saved_movies,
         user_id=user_id,
-        DB_SERVICE_URL=DB_SERVICE_URL  # Pass as DB_SERVICE_URL (uppercase)
+        DB_SERVICE_URL=DB_SERVICE_URL
     )

@@ -200,7 +200,7 @@ document.addEventListener("DOMContentLoaded", function() {
             // Get user ID from session
             const userId = "{{ session.get('user_id') }}";
             if (!userId) {
-                alert("You must be logged in to save movies!");
+                showAlert("You must be logged in to save movies!");
                 return;
             }
 
@@ -259,19 +259,19 @@ document.addEventListener("DOMContentLoaded", function() {
             .then(data => {
                 console.log("Response data:", data);
                 if (data.message === "Movie saved successfully") {
-                    alert("Movie saved to your profile!");
+                    showAlert("Movie saved to your profile!");
                     // Disable button
                     this.disabled = true;
                     this.textContent = "Saved";
                 } else if (data.message === "Movie already saved") {
-                    alert("You've already saved this movie.");
+                    showAlert("You've already saved this movie.");
                 } else {
-                    alert("Error: " + (data.error || "Unknown error"));
+                    showAlert("Error: " + (data.error || "Unknown error"));
                 }
             })
             .catch(error => {
                 console.error("Error saving movie:", error);
-                alert("Failed to save movie. Please try again.");
+                showAlert("Failed to save movie. Please try again.");
             });
         });
     });

@@ -12,42 +12,22 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const userId = "{{ session.get('user_id') }}";
-
-    // First try to get the URL from the template
     let dbServiceUrl = "{{ DB_SERVICE_URL }}";
 
-    console.log("User ID:", userId);
-    console.log("DB Service URL from template:", dbServiceUrl);
-
-    // If it's empty, fall back to our known working URL
+    // Use fallback URL if needed
     if (!dbServiceUrl) {
         dbServiceUrl = "http://chatbot-database.uksouth.azurecontainer.io:6003";
-        console.log("Using fallback DB URL:", dbServiceUrl);
     }
 
-    // Ensure the DB service URL has the http:// prefix
+    // Ensure URL has http:// prefix
     if (dbServiceUrl && !dbServiceUrl.startsWith('http')) {
         dbServiceUrl = 'http://' + dbServiceUrl;
-        console.log("Added http:// prefix, now using:", dbServiceUrl);
     }
 
-    console.log("Final DB Service URL:", dbServiceUrl);
-
-    // Now use the URL to fetch saved movies
+    // Fetch saved movies
     fetch(`${dbServiceUrl}/movies/list?user_id=${userId}`)
-        .then(response => {
-            console.log("Response status:", response.status);
-            return response.text().then(text => {
-                try {
-                    return JSON.parse(text);
-                } catch (e) {
-                    console.error("Failed to parse JSON:", text);
-                    throw new Error(`Invalid JSON: ${text.substring(0, 100)}...`);
-                }
-            });
-        })
+        .then(response => response.json())
         .then(data => {
-            console.log("Response data:", data);
             const container = document.getElementById('saved-movies-container');
             const savedMovies = data.saved_movies || [];
 
@@ -87,7 +67,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 button.addEventListener('click', function() {
                     const savedId = this.getAttribute('data-saved-id');
 
-                    if (confirm('Are you sure you want to remove this movie from your saved list?')) {
+                    showConfirm('Are you sure you want to remove this movie from your saved list?', () => {
+                        // This runs when user clicks OK
                         fetch(`${dbServiceUrl}/movies/remove`, {
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json' },
@@ -95,16 +76,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         })
                         .then(response => response.json())
                         .then(data => {
-                            alert("Movie removed!");
-                            location.reload();  // Reload page to update UI
+                            showAlert("Movie removed!", () => {
+                                location.reload();  // Reload page to update UI
+                            });
                         })
                         .catch(error => console.error("Error:", error));
-                    }
+                    });
                 });
             });
         })
         .catch(error => {
-            console.error('Error fetching saved movies:', error);
             document.getElementById('saved-movies-container').innerHTML = `
                 <div class="error-state">
                     <p>Error loading saved movies: ${error.message}</p>

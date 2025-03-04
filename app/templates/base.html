@@ -72,5 +72,85 @@
     });
     </script>
 
+<div id="custom-modal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-title">Message</h3>
+      <span class="modal-close">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p id="modal-message"></p>
+    </div>
+    <div class="modal-footer">
+      <button id="modal-cancel-btn" class="modal-btn modal-cancel">Cancel</button>
+      <button id="modal-ok-btn" class="modal-btn modal-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Modal functionality for the entire application
+(function() {
+  const modal = document.getElementById('custom-modal');
+  const title = document.getElementById('modal-title');
+  const message = document.getElementById('modal-message');
+  const okBtn = document.getElementById('modal-ok-btn');
+  const cancelBtn = document.getElementById('modal-cancel-btn');
+  const closeBtn = document.querySelector('.modal-close');
+
+  // Close when clicking X
+  closeBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  // Close when clicking outside the modal
+  window.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+
+  // Function to show alert modal
+  window.showAlert = function(msg, callback) {
+    title.textContent = 'MovieMe';
+    message.textContent = msg;
+
+    // Hide the cancel button for alerts
+    cancelBtn.style.display = 'none';
+
+    // Set up the OK button
+    okBtn.onclick = () => {
+      modal.style.display = 'none';
+      if (callback) callback();
+    };
+
+    modal.style.display = 'block';
+  };
+
+  // Function to show confirmation modal
+  window.showConfirm = function(msg, onConfirm, onCancel) {
+    title.textContent = 'Confirm Action';
+    message.textContent = msg;
+
+    // Show the cancel button for confirmations
+    cancelBtn.style.display = 'inline-block';
+
+    // Set up the Cancel button
+    cancelBtn.onclick = () => {
+      modal.style.display = 'none';
+      if (onCancel) onCancel();
+    };
+
+    // Set up the OK button
+    okBtn.onclick = () => {
+      modal.style.display = 'none';
+      if (onConfirm) onConfirm();
+    };
+
+    modal.style.display = 'block';
+  };
+})();
+</script>
+
 </body>
 </html>
