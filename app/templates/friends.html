@@ -3,6 +3,82 @@
 {% block content %}
 <div class="page-container">
     <h2>Friends Page</h2>
-    <p>Friends page coming soon...</p>
+
+    <h2>Search Users</h2>
+    <input type="text" id="search" placeholder="Search users..." oninput="searchUsers()">
+    <div id="users" class="user-list"></div>
+    
+    <h2>Your Friends</h2>
+    <div id="friends" class="friend-list"></div>
 </div>
+
+<script>
+    const userId = "{{ session.get('user_id') }}";
+    const DB_SERVICE_URL = "{{ DB_SERVICE_URL }}";  // Passed from Flask
+
+    async function fetchUsers() {
+        const res = await fetch(`${DB_SERVICE_URL}/users`);
+        const users = await res.json();
+        displayUsers(users);
+    }
+
+    async function fetchFriends() {
+        const res = await fetch(`${DB_SERVICE_URL}/friends/list?user_id=${userId}`);
+        const data = await res.json();
+        displayFriends(data.friends);
+    }
+    
+    function displayUsers(users) {
+        const usersDiv = document.getElementById('users');
+        usersDiv.innerHTML = '';
+        users.forEach(user => {
+            if (user.id !== parseInt(userId)) {
+                usersDiv.innerHTML += `
+                    <div class="user">
+                        <span>${user.username}</span>
+                        <button onclick="sendFriendRequest(${user.id})">Add Friend</button>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    function displayFriends(friends) {
+        const friendsDiv = document.getElementById('friends');
+        friendsDiv.innerHTML = '';
+        friends.forEach(friend => {
+            friendsDiv.innerHTML += `
+                <div class="user">
+                    <span onclick="viewProfile(${friend.id})" style="cursor:pointer; color:blue;">${friend.username}</span>
+                </div>
+            `;
+        });
+    }
+    
+    async function sendFriendRequest(friendId) {
+        await fetch(`${DB_SERVICE_URL}/friends/request`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, friend_id: friendId })
+        });
+        alert('Friend request sent!');
+        fetchFriends();
+    }
+
+    function viewProfile(friendId) {
+        window.location.href = `/profile.html?user_id=${friendId}`;
+    }
+    
+    async function searchUsers() {
+        const query = document.getElementById('search').value.toLowerCase();
+        const res = await fetch(`${DB_SERVICE_URL}/users`);
+        const users = await res.json();
+        const filteredUsers = users.filter(user => user.username.toLowerCase().includes(query));
+        displayUsers(filteredUsers);
+    }
+    
+    fetchUsers();
+    fetchFriends();
+</script>
+
 {% endblock %}
