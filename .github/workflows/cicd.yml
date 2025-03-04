@@ -14,6 +14,7 @@ env:
   CHATBOT_URL: ${{ secrets.CHATBOT_URL }}
   DB_SERVICE_URL: ${{ secrets.DB_SERVICE_URL }}
   TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+  SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
 jobs:
   build-and-push-api:
@@ -37,6 +38,7 @@ jobs:
             --build-arg CHATBOT_URL=${{ secrets.CHATBOT_URL }} \
             --build-arg DB_SERVICE_URL=${{ secrets.DB_SERVICE_URL }} \
             --build-arg TMDB_API_KEY=${{ secrets.TMDB_API_KEY }} \
+            --build-arg SECRET_KEY=${{ secrets.SECRET_KEY }} \
             -t ghcr.io/$REPO_NAME/movie-me:latest \
             --push .
 
@@ -73,6 +75,7 @@ jobs:
               --ports 5000 \
               --environment-variables \
                 DB_SERVICE_URL="${{ secrets.DB_SERVICE_URL }}" \
+                SECRET_KEY="${{ secrets.SECRET_KEY }}" \
                 CHATBOT_URL="${{ secrets.CHATBOT_URL }}" \
                 TMDB_API_KEY="${{ secrets.TMDB_API_KEY }}"
 
