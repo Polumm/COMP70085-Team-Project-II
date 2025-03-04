@@ -1,8 +1,97 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-container">
-    <h2>Profile Page</h2>
-    <p>Profile page coming soon...</p>
+<div class="profile-container">
+    <h1>Your Saved Movies</h1>
+
+    <div id="saved-movies-container" class="saved-movies-grid">
+        <div class="loading">Loading your saved movies...</div>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userId = "{{ session.get('user_id') }}";
+    let dbServiceUrl = "{{ DB_SERVICE_URL }}";
+
+    // Use fallback URL if needed
+    if (!dbServiceUrl) {
+        dbServiceUrl = "http://chatbot-database.uksouth.azurecontainer.io:6003";
+    }
+
+    // Ensure URL has http:// prefix
+    if (dbServiceUrl && !dbServiceUrl.startsWith('http')) {
+        dbServiceUrl = 'http://' + dbServiceUrl;
+    }
+
+    // Fetch saved movies
+    fetch(`${dbServiceUrl}/movies/list?user_id=${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('saved-movies-container');
+            const savedMovies = data.saved_movies || [];
+
+            if (savedMovies.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>No movies saved yet.</p>
+                        <a href="{{ url_for('search.movie_search') }}" class="search-btn">Find Movies to Save</a>
+                    </div>
+                `;
+                return;
+            }
+
+            // Create HTML for saved movies
+            let moviesHTML = '';
+            savedMovies.forEach(movie => {
+                const posterPath = movie.poster_path ?
+                    (movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w200${movie.poster_path}`) :
+                    '';
+
+                moviesHTML += `
+                    <div class="movie-card">
+                        ${posterPath ? `<img src="${posterPath}" alt="${movie.title}" class="movie-poster-img">` : ''}
+                        <div class="movie-info">
+                            <h4>${movie.title}</h4>
+                            ${movie.rating ? `<p>Rating: ⭐ ${movie.rating}/10</p>` : ''}
+                            <button class="remove-movie-btn" data-saved-id="${movie.id}">Remove</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = moviesHTML;
+
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-movie-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const savedId = this.getAttribute('data-saved-id');
+
+                    showConfirm('Are you sure you want to remove this movie from your saved list?', () => {
+                        // This runs when user clicks OK
+                        fetch(`${dbServiceUrl}/movies/remove`, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ saved_id: savedId, user_id: userId })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            showAlert("Movie removed!", () => {
+                                location.reload();  // Reload page to update UI
+                            });
+                        })
+                        .catch(error => console.error("Error:", error));
+                    });
+                });
+            });
+        })
+        .catch(error => {
+            document.getElementById('saved-movies-container').innerHTML = `
+                <div class="error-state">
+                    <p>Error loading saved movies: ${error.message}</p>
+                </div>
+            `;
+        });
+});
+</script>
 {% endblock %}
