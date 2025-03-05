@@ -52,13 +52,16 @@ def create_app():
     from app.routes.quotes import quote_bp
     from app.routes.chatbot import chatbot_bp
     from app.routes.profile import profile_bp
+    from app.routes.friend_profile import friend_profile_bp
+
 
     app.register_blueprint(main, url_prefix="/")
     app.register_blueprint(search, url_prefix="/search")
     app.register_blueprint(auth, url_prefix="/auth")
     app.register_blueprint(quote_bp, url_prefix="/")
-    app.register_blueprint(chatbot_bp, url_prefix="/")
-    app.register_blueprint(profile_bp, url_prefix="/")
+    app.register_blueprint(chatbot_bp, url_prefix="/chatbot")
+    app.register_blueprint(profile_bp, url_prefix="/profile")
+    app.register_blueprint(friend_profile_bp, url_prefix="/profile/friend")
 
     # Ensure tables are created
     with app.app_context():
