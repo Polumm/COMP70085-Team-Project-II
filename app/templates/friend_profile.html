@@ -5,20 +5,25 @@
     <h2>{{ username }}'s Saved Movies</h2>
 
     {% if saved_movies %}
-        <ul>
+        <div class="saved-movies-grid">
             {% for movie in saved_movies %}
-                <li>
-                    <strong>{{ movie.title }}</strong>  
-                    <br>⭐ {{ movie.rating or "No rating" }}
-                    <br><img src="{{ movie.poster_path }}" alt="{{ movie.title }}">
-                </li>
+                <div class="movie-card">
+                    {% if movie.poster_path %}
+                        <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster-img">
+                    {% else %}
+                        <div class="no-poster">No Image</div>
+                    {% endif %}
+                    <div class="movie-info">
+                        <h4>{{ movie.title }}</h4>
+                    </div>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     {% else %}
         <p>No saved movies yet.</p>
     {% endif %}
 
     <br>
-    <a href="{{ url_for('main.friends') }}">🔙 Back to Friends</a>
+    <a href="{{ url_for('main.friends') }}" class="search-btn">🔙 Back to Friends</a>
 </div>
 {% endblock %}
