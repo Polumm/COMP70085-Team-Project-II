@@ -1,3 +1,6 @@
+# ----------------------------------------------------
+# JWT Helpers
+# ----------------------------------------------------
 import asyncio
 import random
 import threading
@@ -30,14 +33,32 @@ DB_SERVICE_URL = os.getenv("DB_SERVICE_URL")
 # ----------------------------------------------------
 # JWT Helpers
 # ----------------------------------------------------
+
 def generate_jwt(username, expires_in=3600):
+    # ✅ Fetch user details from DB microservice
+    response = requests.get(f"{DB_SERVICE_URL}/users/{username}", timeout=5)
+
+    print(f"🟡 Debug: DB Service Response Status → {response.status_code}")
+    print(f"🟡 Debug: DB Service Response Body → {response.text}")  # ✅ Print response
+
+    if response.status_code != 200:
+        raise ValueError("User not found in DB microservice")
+
+    user_data = response.json()  # ✅ Get user details including user_id
+
+    if "id" not in user_data:
+        raise ValueError(f"User data is missing 'id' → {user_data}")  # Debugging
+
     payload = {
-        "username": username,
-        "exp": datetime.now(timezone.utc) + timedelta(seconds=expires_in),
+        "user_id": user_data["id"],  # ✅ Now user_id comes from DB microservice
+        "username": user_data["username"],
+        "exp": datetime.now(timezone.utc) + timedelta(seconds=expires_in)
     }
+
+    print(f"✅ Debug: New Token Payload → {payload}")  # ✅ Log the JWT payload
+
     secret_key = current_app.config["SECRET_KEY"]
     return jwt.encode(payload, secret_key, algorithm="HS256")
-
 
 def decode_jwt(token):
     try:
@@ -149,7 +170,7 @@ def login():
 
         # Otherwise, check password:
         if check_password_hash(user_data["password_hash"], password):
-            token = generate_jwt(username)
+            token = generate_jwt(user_data["username"])
             session["token"] = token
             session["user_id"] = user_data["id"]  # ✅ Store user_id in session
             session["username"] = username  # Store username in session

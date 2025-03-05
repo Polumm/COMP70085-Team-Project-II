@@ -382,6 +382,9 @@ def send_to_session():
     token = session.get("token")
     headers = {"Authorization": f"Bearer {token}"} if token else {}
 
+    print(f"🟡 Debug: Sending request to {CHATBOT_URL}/chat")
+    print(f"🟡 Debug: Headers = {headers}")
+
     # 1️⃣ Store user message in DB
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:

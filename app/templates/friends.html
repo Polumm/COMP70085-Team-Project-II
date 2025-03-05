@@ -8,7 +8,9 @@
     <input type="text" id="search" placeholder="Search users..." oninput="searchUsers()">
     <div id="users" class="user-list"></div>
     
-    <h2>Your Friends</h2>
+    <h2>Friends</h2>
+    <div id="friend-requests"></div>
+    <h3>My Friends</h3>
     <div id="friends" class="friend-list"></div>
 </div>
 
@@ -70,15 +72,70 @@
     }
     
     async function searchUsers() {
-        const query = document.getElementById('search').value.toLowerCase();
+    const query = document.getElementById('search').value.toLowerCase().trim();
+    
+    // Only search if query is not empty
+    if (query.length === 0) {
+        document.getElementById('users').innerHTML = ""; // Clear results if search is empty
+        return;
+    }
+
+    try {
         const res = await fetch(`${DB_SERVICE_URL}/users`);
         const users = await res.json();
-        const filteredUsers = users.filter(user => user.username.toLowerCase().includes(query));
+        const filteredUsers = users.filter(user => 
+            user.username.toLowerCase().includes(query) && user.id !== parseInt(userId)
+        );
         displayUsers(filteredUsers);
+    } catch (error) {
+        console.error("Error fetching users:", error);
     }
-    
-    fetchUsers();
+}
+
+async function fetchFriendRequests() {
+    try {
+        const res = await fetch(`${DB_SERVICE_URL}/friends/requests?user_id=${userId}`);
+        const data = await res.json();
+        displayFriendRequests(data.requests);
+    } catch (error) {
+        console.error("Error fetching friend requests:", error);
+    }
+}
+
+function displayFriendRequests(requests) {
+    const requestsDiv = document.getElementById("friend-requests");
+    requestsDiv.innerHTML = "<h3>Pending Friend Requests</h3>";
+
+    if (requests.length === 0) {
+        requestsDiv.innerHTML += "<p>No pending requests.</p>";
+        return;
+    }
+
+    requests.forEach(req => {
+        requestsDiv.innerHTML += `
+            <div class="request">
+                <span>${req.from_username}</span>
+                <button onclick="acceptFriendRequest(${req.friendship_id})">Accept</button>
+            </div>
+        `;
+    });
+}
+
+async function acceptFriendRequest(friendshipId) {
+    await fetch(`${DB_SERVICE_URL}/friends/accept`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ friendship_id: friendshipId })
+    });
+    alert("Friend request accepted!");
+    fetchFriends(); // Update the friends list
+    fetchFriendRequests(); // Refresh pending requests
+}
+
+// Call this function when the page loads
+    fetchFriendRequests();
     fetchFriends();
+
 </script>
 
 {% endblock %}

@@ -3,6 +3,7 @@ from flask import Blueprint, render_template
 from flask_login import current_user
 from app.routes.auth import login_required
 from app.routes.chatbot import multisession_chat
+import os
 
 main = Blueprint("main", __name__)
 
@@ -28,7 +29,7 @@ def profile():
 @main.route("/friends")
 @login_required
 def friends():
-    return render_template("friends.html")
+    return render_template("friends.html", DB_SERVICE_URL=os.getenv("DB_SERVICE_URL"))
 
 
 @main.route("/chatbot")
