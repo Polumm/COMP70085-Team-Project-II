@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="profile-container">
+    <h2>{{ username }}'s Saved Movies</h2>
+
+    {% if saved_movies %}
+        <div class="saved-movies-grid">
+            {% for movie in saved_movies %}
+                <div class="movie-card">
+                    {% if movie.poster_path %}
+                        <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster-img">
+                    {% else %}
+                        <div class="no-poster">No Image</div>
+                    {% endif %}
+                    <div class="movie-info">
+                        <h4>{{ movie.title }}</h4>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No saved movies yet.</p>
+    {% endif %}
+
+    <br>
+    <a href="{{ url_for('main.friends') }}" class="search-btn">🔙 Back to Friends</a>
+</div>
+{% endblock %}

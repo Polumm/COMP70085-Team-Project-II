@@ -51,7 +51,10 @@
         friends.forEach(friend => {
             friendsDiv.innerHTML += `
                 <div class="user">
-                    <span onclick="viewProfile(${friend.id})" style="cursor:pointer; color:blue;">${friend.username}</span>
+                    <span onclick="viewProfile('${friend.username}')"
+                            style="cursor:pointer; color:blue; text-decoration:underline;">
+                        ${friend.username}
+                    </span>
                 </div>
             `;
         });
@@ -67,8 +70,8 @@
         fetchFriends();
     }
 
-    function viewProfile(friendId) {
-        window.location.href = `/profile.html?user_id=${friendId}`;
+    function viewProfile(username) {
+        window.location.href = `/profile/friend/${username}`;
     }
     
     async function searchUsers() {
