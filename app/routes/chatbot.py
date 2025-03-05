@@ -359,16 +359,28 @@ def select_session(session_id):
     )
 
 
+# Create a persistent session for HTTP requests
+http_session = requests.Session()
+
+
 @chatbot_bp.route("/botchat/send", methods=["POST"])
 @login_required
 def send_to_session():
-    """
-    Send a user message to the chatbot-service, store it in DB microservice,
-    then store the bot's response in DB microservice.
-    """
     username = g.username
     session_id = request.form.get("session_id", "").strip()
     user_message = request.form.get("message", "").strip()
+
+    # Retrieve conversation state from frontend (for DB logging only)
+    conversation_state_str = request.form.get("conversation_state", "{}")
+    try:
+        conversation_state = json.loads(conversation_state_str)
+    except json.JSONDecodeError:
+        conversation_state = {}
+
+    print(
+        f"🟡 Debug: Received conversation state from frontend → {conversation_state}"
+    )
+    print(f"🟡 Debug: Received user message → {user_message}")
 
     if not session_id:
         flash("No session specified.", "error")
@@ -376,19 +388,23 @@ def send_to_session():
 
     if not user_message:
         flash("Message cannot be empty.", "error")
-        return redirect(url_for("chatbot_bp.multisession_chat", session_id=session_id))
+        return redirect(
+            url_for("chatbot_bp.multisession_chat", session_id=session_id)
+        )
 
-    # ✅ Get JWT token from the session and send it in the headers
+    # Get JWT token from the session and set in headers
     token = session.get("token")
     headers = {"Authorization": f"Bearer {token}"} if token else {}
+    http_session.headers.update(headers)
 
-    print(f"🟡 Debug: Sending request to {CHATBOT_URL}/chat")
-    print(f"🟡 Debug: Headers = {headers}")
+    print(
+        f"🟡 Debug: Sending request to {CHATBOT_URL}/chat with headers: {headers}"
+    )
 
     # 1️⃣ Store user message in DB
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
-        user_store_resp = requests.post(
+        user_store_resp = http_session.post(
             f"{DB_SERVICE_URL}/botchat/messages",
             json={
                 "username": username,
@@ -396,40 +412,56 @@ def send_to_session():
                 "session_id": session_id,
                 "message": user_message,
                 "time": timestamp,
+                "conversation_state": conversation_state,
             },
             timeout=5,
         )
         user_store_resp.raise_for_status()
     except requests.exceptions.RequestException:
         flash("Error contacting DB service for user message.", "error")
-        return redirect(url_for("chatbot_bp.multisession_chat", session_id=session_id))
+        return redirect(
+            url_for("chatbot_bp.multisession_chat", session_id=session_id)
+        )
 
-    # 2️⃣ Call chatbot-service for a reply (now sending JWT in headers)
+    # 2️⃣ Call chatbot-service for a reply
     try:
-        bot_resp = requests.post(
+        bot_resp = http_session.post(
             f"{CHATBOT_URL}/chat",
-            json={"session_id": session_id, "message": user_message},
-            headers=headers,  # ✅ Pass token to chatbot-service
+            json={
+                "session_id": session_id,
+                "message": user_message,
+            },
             timeout=5,
         )
         if bot_resp.status_code == 200:
             bot_json = bot_resp.json()
-            bot_text = json.dumps(bot_json)  # Store the entire JSON response as a string
+            bot_text = json.dumps(bot_json)  # store the full JSON response
+            conversation_state = bot_json.get("conversation_state", {})
+            print(
+                f"✅ Debug: Updated conversation state from chatbot-service → {conversation_state}"
+            )
         else:
-            bot_text = json.dumps({"response_type": "text", "response": "Bot did not respond."})
+            bot_text = json.dumps(
+                {"response_type": "text", "response": "Bot did not respond."}
+            )
     except requests.exceptions.RequestException:
-        bot_text = json.dumps({"response_type": "text", "response": "Error contacting chatbot."})
+        bot_text = json.dumps(
+            {"response_type": "text", "response": "Error contacting chatbot."}
+        )
 
     # 3️⃣ Store bot's response in DB
     try:
-        bot_store_resp = requests.post(
+        bot_store_resp = http_session.post(
             f"{DB_SERVICE_URL}/botchat/messages",
             json={
                 "username": username,
                 "sender": "bot",
                 "session_id": session_id,
                 "message": bot_text,
-                "time": (datetime.now() + timedelta(seconds=1)).strftime("%Y-%m-%d %H:%M:%S"),
+                "time": (datetime.now() + timedelta(seconds=1)).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+                "conversation_state": conversation_state,
             },
             timeout=5,
         )
@@ -437,7 +469,9 @@ def send_to_session():
     except requests.exceptions.RequestException:
         flash("Error contacting DB service to store bot response.", "error")
 
-    return redirect(url_for("chatbot_bp.multisession_chat", session_id=session_id))
+    return redirect(
+        url_for("chatbot_bp.multisession_chat", session_id=session_id)
+    )
 
 
 @chatbot_bp.route("/botchat/delete/<session_id>", methods=["GET"])
