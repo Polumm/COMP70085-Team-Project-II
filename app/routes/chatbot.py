@@ -370,6 +370,16 @@ def send_to_session():
     session_id = request.form.get("session_id", "").strip()
     user_message = request.form.get("message", "").strip()
 
+    # Retrieve conversation state from frontend (ensure it's passed correctly)
+    conversation_state = request.form.get("conversation_state", "{}")
+    try:
+        conversation_state = json.loads(conversation_state)
+    except json.JSONDecodeError:
+        conversation_state = {}
+
+    print(f"🟡 Debug: Received conversation state → {conversation_state}")
+    print(f"🟡 Debug: Received user message → {user_message}")
+
     if not session_id:
         flash("No session specified.", "error")
         return redirect(url_for("chatbot_bp.multisession_chat"))
@@ -396,6 +406,7 @@ def send_to_session():
                 "session_id": session_id,
                 "message": user_message,
                 "time": timestamp,
+                "conversation_state": conversation_state,  # Store conversation state
             },
             timeout=5,
         )
@@ -408,13 +419,19 @@ def send_to_session():
     try:
         bot_resp = requests.post(
             f"{CHATBOT_URL}/chat",
-            json={"session_id": session_id, "message": user_message},
+            json={
+                "session_id": session_id,
+                "message": user_message,
+                "conversation_state": conversation_state,  # ✅ Pass the updated state
+            },
             headers=headers,  # ✅ Pass token to chatbot-service
             timeout=5,
         )
         if bot_resp.status_code == 200:
             bot_json = bot_resp.json()
             bot_text = json.dumps(bot_json)  # Store the entire JSON response as a string
+            conversation_state = bot_json.get("conversation_state", {})  # ✅ Store updated state
+            print(f"✅ Debug: Updated conversation state → {conversation_state}")
         else:
             bot_text = json.dumps({"response_type": "text", "response": "Bot did not respond."})
     except requests.exceptions.RequestException:
@@ -430,6 +447,7 @@ def send_to_session():
                 "session_id": session_id,
                 "message": bot_text,
                 "time": (datetime.now() + timedelta(seconds=1)).strftime("%Y-%m-%d %H:%M:%S"),
+                "conversation_state": conversation_state,  # ✅ Store the latest state
             },
             timeout=5,
         )
