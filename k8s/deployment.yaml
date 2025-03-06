@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+apiVersion: apps/v1 
 kind: Deployment
 metadata:
   name: movie-me
@@ -49,16 +49,3 @@ spec:
             limits:
               cpu: "1"
               memory: "1Gi"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: movie-me-service
-spec:
-  selector:
-    app: movie-me
-  ports:
-    - protocol: TCP
-      port: 5000
-      targetPort: 5000
-  type: LoadBalancer  # Change to ClusterIP if using Ingress
