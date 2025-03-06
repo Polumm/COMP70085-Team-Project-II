@@ -54,6 +54,14 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SERVER_KEY }}
           script: |
+            echo "🔹 Updating Kubernetes Secret..."
+            kubectl delete secret chatbot-secrets || true
+            kubectl create secret generic chatbot-secrets \
+              --from-literal=CHATBOT_URL="${{ secrets.CHATBOT_URL }}" \
+              --from-literal=DB_SERVICE_URL="${{ secrets.DB_SERVICE_URL }}" \
+              --from-literal=TMDB_API_KEY="${{ secrets.TMDB_API_KEY }}" \
+              --from-literal=SECRET_KEY="${{ secrets.SECRET_KEY }}"
+
             kubectl rollout restart deployment movie-me
 
             echo "✅ Deployment complete!"
