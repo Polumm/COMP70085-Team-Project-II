@@ -1,144 +1,232 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-container">
-    <h2>Friends Page</h2>
+<div class="profile-container">
+    <h2 class="section-title">Friends</h2>
 
-    <h2>Search Users</h2>
-    <input type="text" id="search" placeholder="Search users..." oninput="searchUsers()">
-    <div id="users" class="user-list"></div>
-    
-    <h2>Friends</h2>
-    <div id="friend-requests"></div>
-    <h3>My Friends</h3>
-    <div id="friends" class="friend-list"></div>
+    <!-- Search Bar at the top -->
+    <div class="search-section">
+        <input type="text" id="search" class="search-input" placeholder="Search users..." oninput="searchUsers()">
+        <div id="users" class="user-list"></div>
+    </div>
+
+    <!-- My Friends Section -->
+    <div class="friends-section">
+        <h3 class="subsection-title">Friend List</h3>
+        <div id="friends" class="friend-grid">
+            <!-- Empty state will be injected here if needed -->
+        </div>
+    </div>
+
+    <!-- Friend Requests Section -->
+    <div class="friends-requests-section">
+        <h3 class="subsection-title">Pending Friend Requests</h3>
+        <div id="friend-requests" class="request-list">
+            <!-- Empty state will be injected here if needed -->
+        </div>
+    </div>
 </div>
 
 <script>
     const userId = "{{ session.get('user_id') }}";
     const DB_SERVICE_URL = "{{ DB_SERVICE_URL }}";  // Passed from Flask
 
+    // Fetch all users for search
     async function fetchUsers() {
         const res = await fetch(`${DB_SERVICE_URL}/users`);
         const users = await res.json();
         displayUsers(users);
     }
 
+    // Fetch friends list
     async function fetchFriends() {
         const res = await fetch(`${DB_SERVICE_URL}/friends/list?user_id=${userId}`);
         const data = await res.json();
         displayFriends(data.friends);
     }
-    
+
+    // Display search results
     function displayUsers(users) {
         const usersDiv = document.getElementById('users');
         usersDiv.innerHTML = '';
+
+        if (users.length === 0 || document.getElementById('search').value.trim() === '') {
+            usersDiv.style.display = 'none';
+            return;
+        }
+
+        usersDiv.style.display = 'block';
         users.forEach(user => {
             if (user.id !== parseInt(userId)) {
                 usersDiv.innerHTML += `
-                    <div class="user">
-                        <span>${user.username}</span>
-                        <button onclick="sendFriendRequest(${user.id})">Add Friend</button>
+                    <div class="user-item">
+                        <span class="user-name">${user.username}</span>
+                        <button class="friend-btn" onclick="sendFriendRequest(${user.id})">Add Friend</button>
                     </div>
                 `;
             }
         });
     }
 
+    // Display friends in grid layout
     function displayFriends(friends) {
         const friendsDiv = document.getElementById('friends');
+
+        // Clear the current content
         friendsDiv.innerHTML = '';
+
+        // Check if there are any friends
+        if (friends.length === 0) {
+            friendsDiv.innerHTML = `
+                <div class="empty-state">
+                    You haven't added any friends yet. Use the search bar above to find friends!
+                </div>
+            `;
+            return;
+        }
+
+        // If we have friends, display them
         friends.forEach(friend => {
             friendsDiv.innerHTML += `
-                <div class="user">
-                    <span onclick="viewProfile('${friend.username}')"
-                            style="cursor:pointer; color:blue; text-decoration:underline;">
-                        ${friend.username}
-                    </span>
+                <div class="friend-card">
+                    <div class="friend-info">
+                        <h4 class="friend-name" onclick="viewProfile(${friend.id})" style="cursor:pointer;">${friend.username}</h4>
+                    </div>
                 </div>
             `;
         });
     }
-    
+
+    // Send friend request
     async function sendFriendRequest(friendId) {
-        await fetch(`${DB_SERVICE_URL}/friends/request`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, friend_id: friendId })
-        });
-        alert('Friend request sent!');
-        fetchFriends();
+        try {
+            const response = await fetch(`${DB_SERVICE_URL}/friends/request`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, friend_id: friendId })
+            });
+
+            if (response.ok) {
+                // Clear the search results
+                document.getElementById('search').value = '';
+                document.getElementById('users').innerHTML = '';
+                document.getElementById('users').style.display = 'none';
+
+                // Show the confirmation modal
+                window.showAlert('Friend request sent!');
+            } else {
+                throw new Error("Server returned an error");
+            }
+        } catch (error) {
+            console.error("Error sending friend request:", error);
+            window.showAlert('Failed to send friend request.');
+        }
     }
 
-    function viewProfile(username) {
-        window.location.href = `/profile/friend/${username}`;
+    // View friend's profile
+    function viewProfile(friendId) {
+        window.location.href = `/profile.html?user_id=${friendId}`;
     }
-    
+
+    // Search users
     async function searchUsers() {
-    const query = document.getElementById('search').value.toLowerCase().trim();
-    
-    // Only search if query is not empty
-    if (query.length === 0) {
-        document.getElementById('users').innerHTML = ""; // Clear results if search is empty
-        return;
+        const query = document.getElementById('search').value.toLowerCase().trim();
+
+        // Only search if query is not empty
+        if (query.length === 0) {
+            document.getElementById('users').innerHTML = ""; // Clear results if search is empty
+            document.getElementById('users').style.display = 'none'; // Hide container
+            return;
+        }
+
+        try {
+            const res = await fetch(`${DB_SERVICE_URL}/users`);
+            const users = await res.json();
+            const filteredUsers = users.filter(user =>
+                user.username.toLowerCase().includes(query) && user.id !== parseInt(userId)
+            );
+            displayUsers(filteredUsers);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+        }
     }
 
-    try {
-        const res = await fetch(`${DB_SERVICE_URL}/users`);
-        const users = await res.json();
-        const filteredUsers = users.filter(user => 
-            user.username.toLowerCase().includes(query) && user.id !== parseInt(userId)
-        );
-        displayUsers(filteredUsers);
-    } catch (error) {
-        console.error("Error fetching users:", error);
-    }
-}
-
-async function fetchFriendRequests() {
-    try {
-        const res = await fetch(`${DB_SERVICE_URL}/friends/requests?user_id=${userId}`);
-        const data = await res.json();
-        displayFriendRequests(data.requests);
-    } catch (error) {
-        console.error("Error fetching friend requests:", error);
-    }
-}
-
-function displayFriendRequests(requests) {
-    const requestsDiv = document.getElementById("friend-requests");
-    requestsDiv.innerHTML = "<h3>Pending Friend Requests</h3>";
-
-    if (requests.length === 0) {
-        requestsDiv.innerHTML += "<p>No pending requests.</p>";
-        return;
+    // Fetch friend requests
+    async function fetchFriendRequests() {
+        try {
+            const res = await fetch(`${DB_SERVICE_URL}/friends/requests?user_id=${userId}`);
+            const data = await res.json();
+            displayFriendRequests(data.requests);
+        } catch (error) {
+            console.error("Error fetching friend requests:", error);
+        }
     }
 
-    requests.forEach(req => {
-        requestsDiv.innerHTML += `
-            <div class="request">
-                <span>${req.from_username}</span>
-                <button onclick="acceptFriendRequest(${req.friendship_id})">Accept</button>
-            </div>
-        `;
-    });
-}
+    // Display friend requests
+    function displayFriendRequests(requests) {
+        const requestsDiv = document.getElementById('friend-requests');
 
-async function acceptFriendRequest(friendshipId) {
-    await fetch(`${DB_SERVICE_URL}/friends/accept`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ friendship_id: friendshipId })
-    });
-    alert("Friend request accepted!");
-    fetchFriends(); // Update the friends list
-    fetchFriendRequests(); // Refresh pending requests
-}
+        // Clear the current content
+        requestsDiv.innerHTML = '';
 
-// Call this function when the page loads
-    fetchFriendRequests();
-    fetchFriends();
+        // Check if there are any requests
+        if (requests.length === 0) {
+            requestsDiv.innerHTML = `
+                <div class="empty-state">
+                    You don't have any pending friend requests at the moment.
+                </div>
+            `;
+            return;
+        }
 
+        // If we have requests, display them
+        requests.forEach(req => {
+            requestsDiv.innerHTML += `
+                <div class="request-item">
+                    <span class="requester-name">${req.from_username}</span>
+                    <button class="accept-btn" onclick="acceptFriendRequest(${req.friendship_id})">Accept</button>
+                </div>
+            `;
+        });
+    }
+
+    // Accept friend request
+    async function acceptFriendRequest(friendshipId) {
+        try {
+            // First accept the friend request
+            const response = await fetch(`${DB_SERVICE_URL}/friends/accept`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ friendship_id: friendshipId })
+            });
+
+            if (!response.ok) {
+                throw new Error("Server returned an error");
+            }
+
+            // Then immediately fetch the updated data
+            const [requestsData, friendsData] = await Promise.all([
+                fetch(`${DB_SERVICE_URL}/friends/requests?user_id=${userId}`).then(res => res.json()),
+                fetch(`${DB_SERVICE_URL}/friends/list?user_id=${userId}`).then(res => res.json())
+            ]);
+
+            // Update the display with the new data
+            displayFriendRequests(requestsData.requests);
+            displayFriends(friendsData.friends);
+
+            // Finally show the confirmation alert
+            window.showAlert("Friend request accepted!");
+
+        } catch (error) {
+            console.error("Error accepting friend request:", error);
+            window.showAlert("Failed to accept friend request.");
+        }
+    }
+
+    // Initialize page
+    window.onload = function() {
+        fetchFriendRequests();
+        fetchFriends();
+    };
 </script>
-
 {% endblock %}
