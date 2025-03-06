@@ -12,86 +12,101 @@ def movie_search():
     BASE_URL = "https://api.themoviedb.org/3"
 
     # ✅ Get logged-in user ID from session
-    user_id = session.get("user_id")  # Ensure session contains user_id
+    user_id = session.get("user_id")
 
     if not user_id:
-        return redirect(url_for("auth.login"))  # Redirect if not logged in
-
-    # Get genres list from TMDB
-    genres_response = requests.get(
-        f"{BASE_URL}/genre/movie/list?api_key={TMDB_API_KEY}&language=en-US"
-    )
+        from flask import flash
+        flash("Please log in first.")  # Added danger category for red color
+        return redirect(url_for("auth.login", next=request.url))  # Redirect if not logged in   
+    
+    # Get genres and languages from TMDB
+    genres_response = requests.get(f"{BASE_URL}/genre/movie/list?api_key={TMDB_API_KEY}&language=en-US")
     genres = genres_response.json().get("genres", []) if genres_response.ok else []
 
-    # Fetch available languages from TMDB
-    languages_response = requests.get(
-        f"{BASE_URL}/configuration/languages?api_key={TMDB_API_KEY}"
-    )
+    languages_response = requests.get(f"{BASE_URL}/configuration/languages?api_key={TMDB_API_KEY}")
     languages = languages_response.json() if languages_response.ok else []
 
-    # Initialize template variables
-    movies_data = {}
-    current_page = 1
-    total_pages = 1
-    selected_genres = []  # Initialize to ensure it's always defined
+    languages = sorted(languages, key=lambda x: x["english_name"])
 
-    # Initialize `selected_filters` properly
+    # ✅ Initialize variables
+    current_page = 1  
+    total_pages = 1  
+    movies = []  
     selected_filters = {}
 
-    # Start building the API parameters
+    # ✅ Capture page number properly
+    page_number = int(request.args.get("page", 1))
+    print(f"🟡 Current Page Requested: {page_number}")  # Debugging
+
+    # ✅ Define filter keys
+    filter_keys = [
+        "year", "primary_release_year", "release_date.gte", "release_date.lte",
+        "vote_average.gte", "vote_average.lte", "vote_count.gte", 
+        "with_runtime.gte", "with_runtime.lte", "with_original_language", "sort_by"
+    ]
+
+    # ✅ Start building API parameters
     params = {
         "api_key": TMDB_API_KEY,
         "language": "en-US",
         "include_adult": False,
-        "page": request.args.get("page", 1),
+        "page": page_number,  # ✅ Ensure correct page number is used
     }
 
-    if request.method == "POST":
-        print(f"Form Data Received: {request.form}")
+    # ✅ **Only fetch movies if user searched (`POST`) or paginated (`GET` with filters)**
+    has_searched = request.method == "POST" or any(request.args.get(k) for k in filter_keys)
 
-        # Define filter keys to persist
-        filters = [
-            "year", 
-            "primary_release_year",
-            "release_date.gte", 
-            "release_date.lte",
-            "vote_average.gte",
-            "vote_average.lte",
-            "vote_count.gte", 
-            "with_runtime.gte", 
-            "with_runtime.lte", 
-            "with_original_language", 
-            "sort_by"
-        ]
-        
-        # Store filters in `params` and `selected_filters`
-        for f in filters:
-            value = request.form.get(f)
-            if value:
-                params[f] = value  
-                selected_filters[f] = value  # Ensure it persists
+    if has_searched:
+        print(f"🟡 Fetching movies for Page: {page_number}")  # Debugging
 
-        # Handle multi-select genres
-        selected_genres = request.form.getlist("with_genres")  
-        if selected_genres:
-            params["with_genres"] = ",".join(selected_genres)
-        
-        # Save selected genres separately for form repopulation
-        selected_filters["with_genres"] = selected_genres  
+        # ✅ Capture filters from POST (Search) and GET (Pagination)
+        if request.method == "POST":
+            print(f"🟡 Form Data Received: {request.form}")
 
-        # Debugging output
-        print(f"Final Params: {params}")
+            for key in filter_keys:
+                value = request.form.get(key)
+                if value:
+                    params[key] = value
+                    selected_filters[key] = value  # ✅ Store for template repopulation
 
-        # Try fetching data from TMDB
+            # ✅ Handle multi-select genres properly
+            selected_filters["with_genres"] = request.form.getlist("with_genres")
+            if selected_filters["with_genres"]:
+                params["with_genres"] = ",".join(selected_filters["with_genres"])
+
+        elif request.args.get("page"):  # ✅ Handle Pagination (Keep Previous Filters)
+            print(f"🟡 Paginating - Keeping previous filters from GET: {request.args}")
+
+            for key in filter_keys:
+                value = request.args.get(key)
+                if value:
+                    params[key] = value
+                    selected_filters[key] = value
+
+            # ✅ Handle multi-select genres in pagination
+            selected_filters["with_genres"] = request.args.getlist("with_genres")
+            if selected_filters["with_genres"]:
+                params["with_genres"] = ",".join(selected_filters["with_genres"])
+
+        print(f"🟡 Final API Parameters: {params}")  # Debugging
+
+        # ✅ Fetch movies from TMDB
         try:
             response = requests.get(f"{BASE_URL}/discover/movie", params=params)
-            print(f"API Request URL: {response.url}")
+            print(f"🟢 API Request URL: {response.url}")  # Debugging
 
             response.raise_for_status()
             movies_data = response.json()
-            current_page = movies_data.get("page", 1)
+
+            # ✅ Extract movies and pagination safely
+            current_page = movies_data.get("page", page_number)
             total_pages = movies_data.get("total_pages", 1)
+            movies = movies_data.get("results", [])
+
+            print(f"🟢 Movies Retrieved for Page {current_page}: {len(movies)} movies")  # Debugging
+
         except requests.RequestException as e:
+            print(f"🔴 Error fetching movies: {str(e)}")
             return render_template(
                 "search.html",
                 error=f"Error fetching movies: {str(e)}",
@@ -100,13 +115,14 @@ def movie_search():
                 selected_filters=selected_filters,
                 current_page=current_page,
                 total_pages=total_pages,
-                movies=[],
+                movies=[],  # ✅ Empty movies list if there's no search
                 user_id=user_id
             )
 
+    # ✅ Render the template with movie data
     return render_template(
         "search.html",
-        movies=movies_data.get("results", []),
+        movies=movies,
         genres=genres,
         languages=languages,
         selected_filters=selected_filters,
