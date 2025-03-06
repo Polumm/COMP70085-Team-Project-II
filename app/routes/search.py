@@ -15,7 +15,9 @@ def movie_search():
     user_id = session.get("user_id")  # Ensure session contains user_id
 
     if not user_id:
-        return redirect(url_for("auth.login"))  # Redirect if not logged in
+        from flask import flash
+        flash("Please log in first.")  # Add "danger" category for red color if necessaey
+        return redirect(url_for("auth.login", next=request.url))  # Redirect if not logged in
 
     # Get genres list from TMDB
     genres_response = requests.get(
