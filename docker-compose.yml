@@ -1,13 +1,14 @@
 version: "3.8"
 
 services:
-  chatbot-database:
+  movie-me:
+    build: .
     ports:
       - "5000:5000"
     environment:
       - FLASK_ENV=deployment
-      - CHATBOT_URL: ${{ secrets.CHATBOT_URL }}
-      - DB_SERVICE_URL: ${{ secrets.DB_SERVICE_URL }}
-      - TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-      - SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      - CHATBOT_URL=${{ secrets.CHATBOT_URL }}
+      - DB_SERVICE_URL=${{ secrets.DB_SERVICE_URL }}
+      - TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+      - SECRET_KEY=${{ secrets.SECRET_KEY }}
     restart: always
