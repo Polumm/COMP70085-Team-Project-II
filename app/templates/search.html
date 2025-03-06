@@ -94,9 +94,10 @@
         </div>
     </form>
 
-    <!-- Results Section -->
-    <div id="resultsContainer">
-        {% if movies %}
+<!-- Results Section -->
+<div id="resultsContainer">
+    {% if request.method == 'POST' %}
+        {% if movies|length > 0 %}
         <div>
             <h3>Search Results</h3>
             {% for movie in movies %}
@@ -118,7 +119,7 @@
                     {% endif %}
 
                     <!-- ✅ Save Movie Button -->
-                    <button class="save-movie-btn" 
+                    <button class="save-movie-btn"
                             data-movie-id="{{ movie.id }}"
                             data-title="{{ movie.title }}"
                             data-poster="{{ movie.poster_path }}"
@@ -153,15 +154,23 @@
             </div>
             {% endif %}
         </div>
-        {% endif %}
-
-        <!-- Error Display -->
-        {% if error %}
-        <div class="error-message">
-            <p>Error: {{ error }}</p>
+        {% else %}
+        <!-- No movies found message -->
+        <div class="no-results">
+            <h3>Search Results</h3>
+            <div class="no-movies-message">
+                <p>No movies found! Please try different search criteria.</p>
+            </div>
         </div>
         {% endif %}
+    {% endif %}
+
+    <!-- Error Display -->
+    {% if error %}
+    <div class="error-message">
+        <p>Error: {{ error }}</p>
     </div>
+    {% endif %}
 </div>
 
 <script>
