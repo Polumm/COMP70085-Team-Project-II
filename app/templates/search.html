@@ -1,10 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <script>
-        const userId = "{{ user_id }}";
-        const dbServiceUrl = "{{ db_service_url }}";
-    </script>
+<script>
+    const userId = "{{ user_id }}";
+    const dbServiceUrl = "{{ DB_SERVICE_URL }}";
+
+    // Define showAlert function
+    function showAlert(message) {
+        alert(message);
+    }
+</script>
 <div class="search-container">
     <h2 class="search-title">Find Your Favorite Movies</h2>
     <form id="searchForm" method="POST" action="{{ url_for('search.movie_search') }}">
@@ -117,8 +122,8 @@
                     <p class="movie-description">{{ movie.overview }}</p>
                     {% endif %}
 
-                    <!-- ✅ Save Movie Button -->
-                    <button class="save-movie-btn" 
+                    <!-- Save Movie Button -->
+                    <button class="save-movie-btn"
                             data-movie-id="{{ movie.id }}"
                             data-title="{{ movie.title }}"
                             data-poster="{{ movie.poster_path }}"
@@ -137,41 +142,23 @@
             </div>
             {% endfor %}
 
-
             <!-- Pagination -->
             {% if total_pages > 1 %}
-            <form id="paginationForm" method="GET" action="{{ url_for('search.movie_search') }}">
-                <!-- Keep all selected filters -->
-                {% for key, value in selected_filters.items() %}
-                    {% if value %}
-                        {% if value is iterable and value is not string %}
-                            {% for v in value %}
-                            <input type="hidden" name="{{ key }}" value="{{ v }}">
-                            {% endfor %}
-                        {% else %}
-                            <input type="hidden" name="{{ key }}" value="{{ value }}">
-                        {% endif %}
-                    {% endif %}
-                {% endfor %}
-            
-                <!-- Ensure page number is passed correctly -->
-                <input type="hidden" name="page" id="pageInput" value="{{ current_page }}">
-            
-                <div class="pagination">
-                    {% if current_page > 1 %}
-                    <button type="submit" onclick="document.getElementById('pageInput').value = {{ current_page-1 }};" class="pagination-btn">Previous</button>
-                    {% endif %}
-            
-                    <span class="pagination-text">Page {{ current_page }} of {{ total_pages }}</span>
-            
-                    {% if current_page < total_pages %}
-                    <button type="submit" onclick="document.getElementById('pageInput').value = {{ current_page+1 }};" class="pagination-btn">Next</button>
-                    {% endif %}
-                </div>
-            </form>        
-            
-        {% else %}
-        <!-- This is the new code to add when there are no movies -->
+            <div class="pagination">
+                {% if current_page > 1 %}
+                <a href="{{ url_for('search.movie_search', page=current_page-1, **selected_filters) }}" class="pagination-btn pagination-link">Previous</a>
+                {% endif %}
+
+                <span class="pagination-text">Page {{ current_page }} of {{ total_pages }}</span>
+
+                {% if current_page < total_pages %}
+                <a href="{{ url_for('search.movie_search', page=current_page+1, **selected_filters) }}" class="pagination-btn pagination-link">Next</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% elif request.method == "POST" or request.args.get('page') %}
+        <!-- Only show this when a search was made but no results found -->
         <div class="no-results">
             <h3>No Movies Found</h3>
             <p>Try adjusting your search criteria to find more movies.</p>
@@ -191,10 +178,10 @@
     document.addEventListener("DOMContentLoaded", function () {
         const searchForm = document.getElementById("searchForm");
         const resultsContainer = document.getElementById("resultsContainer");
-    
+
         function updateResults() {
             const formData = new FormData(searchForm);
-    
+
             fetch("{{ url_for('search.movie_search') }}", {
                 method: "POST",
                 body: formData,
@@ -207,51 +194,146 @@
                 const parser = new DOMParser();
                 const newDocument = parser.parseFromString(html, "text/html");
                 const newResults = newDocument.getElementById("resultsContainer");
-    
+
                 if (newResults) {
-                    resultsContainer.innerHTML = newResults.innerHTML;  // ✅ Only update results!
+                    resultsContainer.innerHTML = newResults.innerHTML;  // Only update results!
                 }
             })
             .catch(error => console.error("Error updating results:", error));
         }
-    
-        // ✅ Update results when filters change without refreshing page
+
+        // Update results when filters change without refreshing page
         document.getElementById("sort_by").addEventListener("change", updateResults);
         document.getElementById("year").addEventListener("change", updateResults);
         document.getElementById("release_date_min").addEventListener("change", updateResults);
         document.getElementById("release_date_max").addEventListener("change", updateResults);
-    
+
         document.querySelectorAll(".genre-checkbox").forEach(checkbox => {
             checkbox.addEventListener("change", updateResults);
         });
-    
-        // ✅ Pagination Fix: Make sure it keeps filters
-        document.querySelectorAll(".pagination-btn").forEach(button => {
-            button.addEventListener("click", function (event) {
-                event.preventDefault();  // Stop page reload
-                const page = this.getAttribute("data-page");
-                const formData = new FormData(searchForm);
-                formData.append("page", page);
-    
-                fetch("{{ url_for('search.movie_search') }}", {
+
+        // Use event delegation for pagination links
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('.pagination-link')) {
+                e.preventDefault();
+
+                // Extract the URL with all parameters
+                const url = new URL(e.target.href);
+                const params = new URLSearchParams(url.search);
+
+                // Fetch the page via AJAX
+                fetch(url)
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const newDocument = parser.parseFromString(html, "text/html");
+                        const newResults = newDocument.getElementById("resultsContainer");
+
+                        if (newResults) {
+                            document.getElementById("resultsContainer").innerHTML = newResults.innerHTML;
+                        }
+
+                        // Update the URL without refreshing (for browser history)
+                        window.history.pushState({}, '', url);
+                    })
+                    .catch(error => console.error("Error with pagination:", error));
+            }
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const saveButtons = document.querySelectorAll(".save-movie-btn");
+
+        saveButtons.forEach(button => {
+            button.addEventListener("click", function() {
+                const movieId = this.getAttribute("data-movie-id");
+                const title = this.getAttribute("data-title");
+                const posterPath = this.getAttribute("data-poster");
+                const releaseDate = this.getAttribute("data-release-date");
+                const voteAverage = this.getAttribute("data-vote-average");
+                const voteCount = this.getAttribute("data-vote-count");
+                const overview = this.getAttribute("data-overview");
+
+                // Get user ID from session
+                const userId = "{{ session.get('user_id') }}";
+                if (!userId) {
+                    showAlert("You must be logged in to save movies!");
+                    return;
+                }
+
+                // First try to get the URL from the template
+                let dbServiceUrl = "{{ DB_SERVICE_URL }}";
+
+                console.log("User ID:", userId);
+                console.log("DB Service URL from template:", dbServiceUrl);
+
+                // If it's empty, fall back to our known working URL
+                if (!dbServiceUrl) {
+                    dbServiceUrl = "http://chatbot-database.uksouth.azurecontainer.io:6003";
+                    console.log("Using fallback DB URL:", dbServiceUrl);
+                }
+
+                // Ensure the DB service URL has the http:// prefix
+                if (dbServiceUrl && !dbServiceUrl.startsWith('http')) {
+                    dbServiceUrl = 'http://' + dbServiceUrl;
+                    console.log("Added http:// prefix, now using:", dbServiceUrl);
+                }
+
+                console.log("Final DB Service URL:", dbServiceUrl);
+
+                console.log("Saving movie...");
+                console.log("Movie ID:", movieId);
+                console.log("User ID:", userId);
+
+                // Send request to save movie
+                fetch(`${dbServiceUrl}/movies/save`, {
                     method: "POST",
-                    body: formData,
-                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        movie_id: movieId,
+                        title: title,
+                        poster_path: posterPath,
+                        release_date: releaseDate,
+                        vote_average: voteAverage,
+                        vote_count: voteCount,
+                        overview: overview
+                    })
                 })
-                .then(response => response.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const newDocument = parser.parseFromString(html, "text/html");
-                    const newResults = newDocument.getElementById("resultsContainer");
-    
-                    if (newResults) {
-                        resultsContainer.innerHTML = newResults.innerHTML;  // ✅ Only update results!
+                .then(response => {
+                    console.log("Response status:", response.status);
+                    return response.text().then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error("Failed to parse JSON:", text);
+                            throw new Error(`Invalid JSON: ${text.substring(0, 100)}...`);
+                        }
+                    });
+                })
+                .then(data => {
+                    console.log("Response data:", data);
+                    if (data.message === "Movie saved successfully") {
+                        showAlert("Movie saved to your profile!");
+                        // Disable button
+                        this.disabled = true;
+                        this.textContent = "Saved";
+                    } else if (data.message === "Movie already saved") {
+                        showAlert("You've already saved this movie.");
+                    } else {
+                        showAlert("Error: " + (data.error || "Unknown error"));
                     }
                 })
-                .catch(error => console.error("Error updating pagination:", error));
+                .catch(error => {
+                    console.error("Error saving movie:", error);
+                    showAlert("Failed to save movie. Please try again.");
+                });
             });
         });
     });
-    </script>    
-{% endif %}
+</script>
 {% endblock %}
