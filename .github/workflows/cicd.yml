@@ -72,7 +72,7 @@ jobs:
               --cpu 1 \
               --memory 1.5 \
               --dns-name-label movie-me \
-              --ports 5000 \
+              --ports 80 \
               --environment-variables \
                 DB_SERVICE_URL="${{ secrets.DB_SERVICE_URL }}" \
                 SECRET_KEY="${{ secrets.SECRET_KEY }}" \
