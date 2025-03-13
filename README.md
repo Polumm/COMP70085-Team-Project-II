@@ -3,7 +3,7 @@
 ## Overview
 MovieMe is a web-based social platform that enriches the experience of discovering and sharing movies through social interactions. The platform serves as both a personal movie catalog system and a movie-centric social network. 
 
-- **Please review the refactored and optimized microservices project, now with WebSocket real-time chat support and enhanced stateless JWT authentication**. [https://github.com/Polumm/demo-whatsapp]
+- **Please review the refactored and optimized microservices project, now with WebSocket real-time chat support, rabbitmq for better decoupling and enhanced stateless JWT authentication**. [https://github.com/Polumm/demo-whatsapp]
 
 ## Key Features
 - **User Authentication & Profiles:** Secure user accounts with personalized movie collections.
